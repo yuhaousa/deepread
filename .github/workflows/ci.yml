@@ -25,42 +25,13 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.CF_DEPLOY == 'true'
     runs-on: ubuntu-latest
     env:
-      CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: 437b1bdabc05d0305e7cad723ba38cde
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
-      # Token 可访问单一账号时，自动修正过期或填错的 Account ID。
-      - name: Resolve Cloudflare account
-        shell: bash
-        run: |
-          set -euo pipefail
-          http_code="$(curl -sS -o /tmp/cloudflare-accounts.json -w '%{http_code}' \
-            https://api.cloudflare.com/client/v4/accounts \
-            -H "Authorization: Bearer \${CLOUDFLARE_API_TOKEN}" \
-            -H "Content-Type: application/json")"
-          if [ "$http_code" != "200" ]; then
-            echo "Cloudflare token could not list its accounts (HTTP $http_code). Check token permissions." >&2
-            exit 1
-          fi
-          account_id="$(CONFIGURED_ACCOUNT_ID="$CLOUDFLARE_ACCOUNT_ID" node -e '
-            const fs = require("node:fs");
-            const response = JSON.parse(fs.readFileSync("/tmp/cloudflare-accounts.json", "utf8"));
-            const accounts = response.result ?? [];
-            const configured = process.env.CONFIGURED_ACCOUNT_ID;
-            const match = accounts.find(account => account.id === configured);
-            if (match) process.stdout.write(match.id);
-            else if (accounts.length === 1) process.stdout.write(accounts[0].id);
-            else {
-              console.error("Configured account ID is inaccessible and the token has multiple or no accounts.");
-              process.exit(1);
-            }
-          ')"
-          echo "CLOUDFLARE_ACCOUNT_ID=$account_id" >> "$GITHUB_ENV"
-          echo "Cloudflare account verified."
-      # 按账号内数据库名称解析真实 ID；仅不存在时创建，并只给新库导入演示数据。
       - name: Resolve Cloudflare D1 database
         id: d1
         shell: bash
