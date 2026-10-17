@@ -75,7 +75,30 @@ jobs:
           echo "Resolved D1 database: $database_id"
           echo "created=$created" >> "$GITHUB_OUTPUT"
       - run: npm run db:migrate:remote
-      - name: Seed newly created database
-        if: steps.d1.outputs.created == 'true'
+      - name: Check whether the D1 database needs seed data
+        id: seed_check
+        shell: bash
+        run: |
+          result="$(npx wrangler d1 execute deepread --remote --json --command "SELECT (SELECT COUNT(*) FROM users) AS users_count, (SELECT COUNT(*) FROM passages) AS passages_count, (SELECT COUNT(*) FROM schools) AS schools_count;" --config wrangler.jsonc)"
+          row_count="$(printf '%s' "$result" | node -e '
+            let input = "";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const parsed = JSON.parse(input);
+              const batches = Array.isArray(parsed) ? parsed : [parsed];
+              const rows = batches.flatMap(batch => batch.results ?? []);
+              if (rows.length !== 1) throw new Error("Could not read D1 seed status.");
+              const row = rows[0];
+              const total = Number(row.users_count) + Number(row.passages_count) + Number(row.schools_count);
+              process.stdout.write(String(total));
+            });
+          ')"
+          if [ "$row_count" = "0" ]; then
+            echo "empty=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "empty=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Seed empty database
+        if: steps.seed_check.outputs.empty == 'true'
         run: npm run db:seed:remote
       - run: npm run deploy
