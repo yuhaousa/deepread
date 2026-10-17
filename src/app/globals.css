@@ -414,6 +414,29 @@ body:has(.hero-slider){overflow-x:clip}
 .hero-stats span{font-size:12.5px;color:var(--mute)}
 .hero-stats .btn{margin-left:auto;text-decoration:none;padding:9px 26px}
 .top .btn.green.login-link{color:#fff}
+
+.growth{margin-top:52px}
+.growth-copy{display:grid;gap:8px}
+.growth-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.growth-photo{position:relative;min-height:330px;margin:0;overflow:hidden;border-radius:var(--r);background:var(--navy-soft)}
+.growth-photo::after{content:"";position:absolute;inset:35% 0 0;background:linear-gradient(transparent,rgba(12,24,34,.72));pointer-events:none}
+.growth-photo img{width:100%;height:100%;position:absolute;inset:0;object-fit:cover}
+.growth-photo figcaption{position:absolute;z-index:1;bottom:0;left:0;right:0;display:flex;justify-content:space-between;gap:12px;align-items:end;padding:20px;color:#fff}
+.growth-photo figcaption span:first-child{font-family:var(--f-read);font-size:20px;font-weight:600}
+.growth-photo figcaption span:last-child{font-size:12px;letter-spacing:.04em;color:rgba(255,255,255,.82)}
+.growth-chart{display:grid;align-content:start;gap:18px;padding:22px 24px}
+.growth-chart-head{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.growth-chart-head .k{font-family:var(--f-read);font-size:18px;font-weight:600}
+.growth-chart-head p{font-size:13px;color:var(--mute);margin-top:3px}
+.growth-badge{padding:3px 9px;border-radius:99px;background:var(--bamboo-soft);color:var(--bamboo);font-size:12px;white-space:nowrap}
+.growth-plot{width:100%;height:auto;overflow:visible}
+.plot-grid path{fill:none;stroke:var(--line);stroke-width:1;stroke-dasharray:3 5}
+.plot-label{fill:var(--mute);font-family:var(--f-ui);font-size:11px}
+.plot-area{fill:var(--bamboo-soft);opacity:.85}
+.plot-line{fill:none;stroke:var(--bamboo);stroke-width:4;stroke-linecap:round}
+.plot-points{fill:var(--paper);stroke:var(--bamboo);stroke-width:3}
+.growth-chart-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mute)}
+
 @media (max-width:860px){
   .hs-inner{grid-template-columns:1fr;gap:28px;padding-top:40px;padding-bottom:96px}
   .hs-slide{min-height:0}
@@ -421,6 +444,7 @@ body:has(.hero-slider){overflow-x:clip}
   .hs-card{padding:16px 18px}
 }
 @media (max-width:480px){.hs-visual{display:none}.hs-slide{min-height:clamp(480px,78vh,640px)}.hero-stats .btn{margin-left:0}}
+@media (max-width:760px){.growth-grid{grid-template-columns:1fr}.growth-photo{min-height:280px}.growth-chart{padding:18px}.growth-photo figcaption{align-items:start;flex-direction:column;gap:2px}}
 
 /* ---------- 材料详情 ---------- */
 .lib .lib-title{font-family:var(--f-read);font-size:16px;font-weight:600;text-decoration:none}

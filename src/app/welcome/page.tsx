@@ -1,5 +1,6 @@
 // 公开落地页：未登录访客的首页。内容全部来自静态材料与领域常量，不依赖数据库。
 import Link from "next/link";
+import Image from "next/image";
 import { PASSAGES } from "@/content/passages";
 import { HeroSlider } from "./hero-slider";
 import { ABILITIES, ABILITY_META, LEVELS, LEVEL_META, STEPS, STEP_LABEL, TUTOR_ROLE_LABEL, type StepKey } from "@/lib/domain";
@@ -55,6 +56,34 @@ export default function Welcome() {
         <Link className="btn green" href="/login">
           登录
         </Link>
+      </section>
+
+      <section className="sec growth" aria-labelledby="growth-title">
+        <div className="growth-copy">
+          <div className="eyebrow">阅读成长，看得见</div>
+          <h2 id="growth-title">从读完一篇，到读懂更多</h2>
+          <p className="lede">每次训练都留下可回看的思考。学生看到自己的进步，教师也能找到下一步该练什么。</p>
+        </div>
+        <div className="growth-grid">
+          <figure className="growth-photo">
+            <Image src="/images/reading-hero.jpg" alt="学生在安静的阅览空间中专注阅读" width={1536} height={1024} sizes="(max-width: 760px) 100vw, 48vw" />
+            <figcaption><span>每天一点，读得更深</span><span>阅读 · 回忆 · 表达</span></figcaption>
+          </figure>
+          <div className="card growth-chart">
+            <div className="growth-chart-head">
+              <div><span className="k">阅读能力变化</span><p>持续练习，让成长过程清晰可见</p></div>
+              <span className="growth-badge">示意图</span>
+            </div>
+            <svg className="growth-plot" viewBox="0 0 520 208" role="img" aria-label="示意折线图：阅读练习次数增加时，能力表现逐步提升">
+              <g className="plot-grid"><path d="M44 28H500M44 72H500M44 116H500M44 160H500" /></g>
+              <g className="plot-label"><text x="8" y="32">高</text><text x="8" y="164">低</text><text x="44" y="192">开始</text><text x="458" y="192">持续练习</text></g>
+              <path className="plot-area" d="M48 147 C92 138 105 128 142 131 S197 108 232 112 S289 82 326 91 S384 66 414 72 S466 43 496 42 L496 160 L48 160Z" />
+              <path className="plot-line" d="M48 147 C92 138 105 128 142 131 S197 108 232 112 S289 82 326 91 S384 66 414 72 S466 43 496 42" />
+              <g className="plot-points"><circle cx="48" cy="147" r="5"/><circle cx="142" cy="131" r="5"/><circle cx="232" cy="112" r="5"/><circle cx="326" cy="91" r="5"/><circle cx="414" cy="72" r="5"/><circle cx="496" cy="42" r="5"/></g>
+            </svg>
+            <div className="growth-chart-foot"><span>练习过程示意 · 非真实学生数据</span><span>重在进步，不做排名</span></div>
+          </div>
+        </div>
       </section>
 
       <section className="sec" id="loop">
