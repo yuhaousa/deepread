@@ -184,8 +184,6 @@ export default function Welcome() {
           </Link>
         </div>
       </section>
-
-      <footer className="note landing-foot">诺雅深读 · 课文均为平台编辑原创教学材料</footer>
     </div>
   );
 }
