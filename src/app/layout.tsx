@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
 import { currentUser } from "@/server/auth";
-import { homeFor } from "@/lib/home";
-import { Nav, LogoutButton } from "./nav";
+import { AppChrome } from "./app-chrome";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -38,7 +36,6 @@ const LINKS = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
   const links = user ? (user.role === "STUDENT" ? LINKS.STUDENT : user.role === "ADMIN" ? LINKS.ADMIN : LINKS.TEACHER) : [];
-  const useSidebar = user?.role === "ADMIN" || user?.role === "TEACHER";
   return (
     <html lang="zh-CN">
       <head>
@@ -49,51 +46,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
         />
       </head>
-      <body>
-        {useSidebar && user ? (
-          <div className="app-shell">
-            <aside className="app-sidebar">
-              <Link href={homeFor(user.role)} className="brand sidebar-brand" style={{ textDecoration: "none" }}>
-                <b>诺雅深读</b>
-                <span>NOYA DEEPREAD</span>
-              </Link>
-              <div className="sidebar-caption">{user.role === "ADMIN" ? "管理后台" : "教师工作区"}</div>
-              <Nav links={[...links]} variant="sidebar" />
-              <div className="sidebar-footer">
-                <span>{user.name}</span>
-                <LogoutButton />
-              </div>
-            </aside>
-            <div className="app-content">
-              <main className="wrap">{children}</main>
-            </div>
-          </div>
-        ) : (
-          <>
-            <header className="top">
-              <div className="wrap">
-                <Link href={user ? homeFor(user.role) : "/welcome"} className="brand" style={{ textDecoration: "none" }}>
-                  <b>诺雅深读</b>
-                  <span>NOYA DEEPREAD</span>
-                </Link>
-                {user && <Nav links={[...links]} />}
-                {!user && (
-                  <Link href="/login" className="btn green login-link">
-                    登录
-                  </Link>
-                )}
-                {user && (
-                  <div className="who">
-                    {user.name}
-                    <LogoutButton />
-                  </div>
-                )}
-              </div>
-            </header>
-            <main className="wrap">{children}</main>
-          </>
-        )}
-      </body>
+      <body><AppChrome user={user} links={[...links]}>{children}</AppChrome></body>
     </html>
   );
 }
+
