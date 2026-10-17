@@ -187,7 +187,7 @@ export function HeroSlider() {
     <section
       className={`hero-slider${reduced ? " still" : ""}`}
       aria-roledescription="carousel"
-      aria-label="深读介绍"
+      aria-label="诺雅深读介绍"
       onMouseEnter={() => setHeld(true)}
       onMouseLeave={() => setHeld(false)}
       onFocus={() => setHeld(true)}

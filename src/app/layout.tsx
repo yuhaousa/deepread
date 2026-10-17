@@ -6,7 +6,7 @@ import { Nav, LogoutButton } from "./nav";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "深读 DeepRead",
+  title: "诺雅深读",
   description: "AI 时代的深度阅读与判断力训练",
 };
 
@@ -54,8 +54,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="app-shell">
             <aside className="app-sidebar">
               <Link href={homeFor(user.role)} className="brand sidebar-brand" style={{ textDecoration: "none" }}>
-                <b>深读</b>
-                <span>DEEPREAD</span>
+                <b>诺雅深读</b>
+                <span>NOYA DEEPREAD</span>
               </Link>
               <div className="sidebar-caption">{user.role === "ADMIN" ? "管理后台" : "教师工作区"}</div>
               <Nav links={[...links]} variant="sidebar" />
@@ -73,8 +73,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <header className="top">
               <div className="wrap">
                 <Link href={user ? homeFor(user.role) : "/welcome"} className="brand" style={{ textDecoration: "none" }}>
-                  <b>深读</b>
-                  <span>DEEPREAD</span>
+                  <b>诺雅深读</b>
+                  <span>NOYA DEEPREAD</span>
                 </Link>
                 {user && <Nav links={[...links]} />}
                 {!user && (

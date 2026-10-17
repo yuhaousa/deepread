@@ -5,7 +5,7 @@ import { PASSAGES } from "@/content/passages";
 import { HeroSlider } from "./hero-slider";
 import { ABILITIES, ABILITY_META, LEVELS, LEVEL_META, STEPS, STEP_LABEL, TUTOR_ROLE_LABEL, type StepKey } from "@/lib/domain";
 
-export const metadata = { title: "深读 DeepRead · AI 时代的深度阅读训练" };
+export const metadata = { title: "诺雅深读 · AI 时代的深度阅读训练" };
 
 const STEP_DETAIL: Record<StepKey, [string, string]> = {
   PREDICT: ["读标题导语，预测结构，写一个问题", "1–2 分钟"],
@@ -185,7 +185,7 @@ export default function Welcome() {
         </div>
       </section>
 
-      <footer className="note landing-foot">深读 DeepRead · 课文均为平台编辑原创教学材料</footer>
+      <footer className="note landing-foot">诺雅深读 · 课文均为平台编辑原创教学材料</footer>
     </div>
   );
 }
