@@ -68,8 +68,9 @@ jobs:
             const path = "wrangler.jsonc";
             const config = fs.readFileSync(path, "utf8");
             const id = process.env.DB_ID;
-            const updated = config.replace(/("database_id"\s*:\s*")[^"]+(")/, (_, before, after) => before + id + after);
-            if (updated === config) throw new Error("Could not find database_id in wrangler.jsonc");
+            const pattern = /("database_id"\s*:\s*")[^"]+(")/;
+            if (!pattern.test(config)) throw new Error("Could not find database_id in wrangler.jsonc");
+            const updated = config.replace(pattern, (_, before, after) => before + id + after);
             fs.writeFileSync(path, updated);
           '
           echo "Resolved D1 database: $database_id"
