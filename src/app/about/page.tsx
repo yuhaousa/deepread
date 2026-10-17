@@ -73,10 +73,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <footer className="about-footer">
-        <b>诺雅深读</b>
-        <span>让每一次阅读，都成为独立思考的练习。</span>
-      </footer>
     </div>
   );
 }
