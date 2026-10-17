@@ -65,6 +65,16 @@ export function AppChrome({
         </div>
       </header>
       <main className="wrap">{children}</main>
+      {(pathname === "/welcome" || pathname === "/about") && (
+        <footer className="site-footer wrap">
+          <Link href="/welcome" className="site-footer-brand">诺雅深读 <span>NOYA DEEPREAD</span></Link>
+          <p>让每一次阅读，都成为独立思考的练习。</p>
+          <nav aria-label="页脚导航">
+            <Link href="/about">关于我们</Link>
+            <Link href="/login">登录</Link>
+          </nav>
+        </footer>
+      )}
     </>
   );
 }
