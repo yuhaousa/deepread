@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ABILITY_META, LEVEL_META, TUTOR_ROLE_LABEL, type AbilityKey, type LevelKey, type TutorRoleKey } from "@/lib/domain";
 import { pageUser, publishedPassages } from "@/server/pages";
+import { dailyStarts } from "@/server/training";
 import { StartButton } from "../start-button";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function Library({ searchParams }: { searchParams: Promise<{ genre?: string; level?: string }> }) {
   const user = await pageUser();
   const { genre, level } = await searchParams;
+  const quota = user.role === "STUDENT" ? await dailyStarts(user.id) : null;
   const all = await publishedPassages();
   const genres = [...new Set(all.map((p) => p.genre))];
   const levels = [...new Set(all.map((p) => p.level))].sort();
@@ -29,6 +31,13 @@ export default async function Library({ searchParams }: { searchParams: Promise<
         <Link href="/levels"> 能力量表 </Link>
         中的文本难度。
       </p>
+      {quota && (
+        <p className={quota.left ? "note" : "levelup"} style={{ marginTop: 10 }}>
+          {quota.left
+            ? `今天还能开始 ${quota.left} / ${quota.limit} 节训练；进行中的训练随时可以继续，原文随时可以阅读。`
+            : `今天的 ${quota.limit} 节训练已经开始完了，明天再来开始新的一节。原文仍然可以阅读，进行中的训练也可以继续。`}
+        </p>
+      )}
       <div className="filter" style={{ marginTop: 16 }}>
         <Link href={href(undefined, level)} aria-pressed={!genre} className="pill">全部文体</Link>
         {genres.map((g) => (
@@ -52,11 +61,14 @@ export default async function Library({ searchParams }: { searchParams: Promise<
               <span className="lvl">{p.level}</span>
               <span className="tag g">{TUTOR_ROLE_LABEL[p.tutorRole as TutorRoleKey]}</span>
             </div>
-            <b>{p.title}</b>
+            <Link href={`/library/${p.id}`} className="lib-title">{p.title}</Link>
             <p className="note">
               主训练能力：{ABILITY_META[p.primaryAbility as AbilityKey].name} · 约 {p.charCount} 字
             </p>
-            {user.role === "STUDENT" && <StartButton passageId={p.id} ghost label="开始这节课" />}
+            <div className="lib-actions">
+              <Link className="btn ghost sm" href={`/library/${p.id}`}>{user.role === "STUDENT" ? "阅读原文" : "查看原文与题目"}</Link>
+              {user.role === "STUDENT" && <StartButton passageId={p.id} ghost label="开始训练" />}
+            </div>
           </div>
         ))}
         {list.length === 0 && <div className="empty">没有符合条件的材料。</div>}

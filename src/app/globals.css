@@ -416,3 +416,19 @@ body:has(.hero-slider){overflow-x:clip}
   .hs-card{padding:16px 18px}
 }
 @media (max-width:480px){.hs-visual{display:none}.hs-slide{min-height:clamp(480px,78vh,640px)}.hero-stats .btn{margin-left:0}}
+
+/* ---------- 材料详情 ---------- */
+.lib .lib-title{font-family:var(--f-read);font-size:16px;font-weight:600;text-decoration:none}
+.lib .lib-title:hover{text-decoration:underline}
+.lib-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:start}
+.passage-page .meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.passage-text{margin-top:20px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:28px clamp(18px,4vw,44px);max-width:none}
+.passage-text h1{font-family:var(--f-read);font-size:clamp(24px,3.4vw,32px);margin:0 0 8px}
+.start-card{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:16px;background:var(--bamboo-soft);border-color:transparent}
+.start-card b{font-size:15.5px}
+.start-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:start}
+.start-actions a.btn{text-decoration:none}
+.answer-key{margin:6px 0 0;padding-left:20px;display:grid;gap:8px;font-size:14px;color:var(--ink-2)}
+.answer-key b{color:var(--ink);font-weight:500}
+.teacher-kit .eyebrow{color:var(--warn)}
+.lib-actions .btn.sm{padding:6px 14px;font-size:13.5px}

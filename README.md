@@ -77,6 +77,7 @@ tests/                    单元测试（vitest）
 - **回忆评分取并集。** 关键词匹配作为离线基线，AI 语义判定作为补充，两者取并集；AI 反馈本身也要过护栏。
 - **量表低置信度进抽检。** AI 量表 `confidence < 0.6` 的作答标记 `flagged`，进入教师抽检。
 - **等级规则**（`learner/levels.ts`）：在本级或更高等级材料上连续 4 次达标率 ≥ 70%，且最近一次 7 天复习没有失败，即升一级；本级连续 3 次 < 40% 推送补练，不显示降级。
+- **内容库可直接阅读。** 每篇材料都能点开阅读原文；学生端不含答案与关键点。每日训练节数上限只限制开始新训练，不限制阅读和继续进行中的训练；演示时可在 `.env` 调大 `DAILY_SESSION_LIMIT`。
 - **合规。** 监护人未同意时不能使用 AI 对话；`DELETE /api/me/data` 一键删除作答原文与对话；每日训练节数上限（`DAILY_SESSION_LIMIT`）；所有 AI 输出标注“AI 导师”。
 
 ## API 一览
@@ -85,6 +86,7 @@ tests/                    单元测试（vitest）
 | --- | --- | --- |
 | POST | `/api/auth/login` · `/api/auth/logout` | 登录 / 退出 |
 | GET | `/api/passages` | 内容库（`?genre=&grade=`） |
+| 页面 | `/library/:id` | 阅读原文；教师 / 管理员另见内容卡片、关键点、答案与参考摘要 |
 | POST | `/api/sessions` | 开始训练（同一篇未完成则继续） |
 | GET / PATCH | `/api/sessions/:id` | 读取去答案材料；推进步骤、上报用时、标记、预测 |
 | POST | `/api/sessions/:id/recall` | 合书回忆 → 关键点覆盖 + 回忆教练反馈 |
