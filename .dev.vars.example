@@ -1,0 +1,16 @@
+# 本地开发的机密配置：复制为 .dev.vars（已在 .gitignore 中）。
+# 线上用 wrangler secret put <名称> 设置，不要写进 wrangler.jsonc。
+# 非机密配置（区域、每日上限、模型档位）在 wrangler.jsonc 的 vars 中。
+
+# ---- 会话签名（至少 32 字符随机串）----
+AUTH_SECRET="change-me-to-a-long-random-string-at-least-32-chars"
+
+# ---- 模型 Key（按 wrangler.jsonc 中选择的提供方填写）----
+# 例：LLM_QUICK_PROVIDER="anthropic"、LLM_QUICK_MODEL="claude-haiku-5-5" 写在 vars，Key 写在这里
+ANTHROPIC_API_KEY=""
+OPENAI_API_KEY=""
+DEEPSEEK_API_KEY=""
+DASHSCOPE_API_KEY=""
+
+# 可选：覆盖接口地址（企业网关 / 代理 / 私有部署）
+# ANTHROPIC_BASE_URL=""  OPENAI_BASE_URL=""  DEEPSEEK_BASE_URL=""  DASHSCOPE_BASE_URL=""

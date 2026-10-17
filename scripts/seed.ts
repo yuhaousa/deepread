@@ -1,18 +1,24 @@
-// 开发 / 演示种子数据。会清空现有数据，生产环境需显式设置 SEED_FORCE=1。
+// 开发 / 演示种子数据，生成 D1 可执行的 SQL 文件（.wrangler/seed.sql），会清空现有数据。
+// 做法：在内存 SQLite 中跑同样的迁移和写入逻辑，再导出为 INSERT 语句；由 wrangler d1 execute --file 写入本地或线上 D1。
 // 演示账号（密码均为 DEMO_PASSWORD）：管理员 admin；教师 teacher；学生 student（无历史记录）与 s2401–s2408
 
-import bcrypt from "bcryptjs";
-import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import * as schema from "../src/db/schema";
 import { PASSAGES } from "../src/content/passages";
 import { ABILITIES, charCount, type AbilityKey, type AnalysisSpec, type PassageSpec } from "../src/lib/domain";
 import { matchKeyPoints, scoreAnalysis, type AnalysisAnswer } from "../src/server/assessment/rules";
 import { abilityScores } from "../src/server/learner/levels";
+import { hashPassword } from "../src/server/password";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const db = drizzle(pool, { schema });
+const OUT = ".wrangler/seed.sql";
+const sqlite = new Database(":memory:");
+sqlite.pragma("foreign_keys = ON");
+for (const f of readdirSync("drizzle").filter((f) => f.endsWith(".sql")).sort()) {
+  for (const stmt of readFileSync(`drizzle/${f}`, "utf8").split("--> statement-breakpoint")) if (stmt.trim()) sqlite.exec(stmt);
+}
+const db = drizzle(sqlite, { schema });
 const DAY = 24 * 3600_000;
 const DEMO_PASSWORD = "Bamboo123";
 
@@ -77,12 +83,7 @@ function simulateAnalysis(a: AnalysisSpec, p: number): AnalysisAnswer {
 }
 
 async function main() {
-  if (process.env.NODE_ENV === "production" && process.env.SEED_FORCE !== "1") {
-    throw new Error("拒绝在生产环境清空数据：如确需执行，设置 SEED_FORCE=1");
-  }
-  await db.execute(sql`TRUNCATE ai_calls, tutor_messages, responses, ability_attempts, review_items, sessions, assignments, mastery, classrooms, users, schools, exercises, key_points, content_cards, passages CASCADE`);
-
-  const pw = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const pw = await hashPassword(DEMO_PASSWORD);
   const [school] = await db.insert(schema.schools).values({ name: "深读示范学校", region: "intl" }).returning();
   const [teacher] = await db.insert(schema.users).values({ username: "teacher", passwordHash: pw, displayName: "王老师", role: "TEACHER" }).returning();
   await db.insert(schema.users).values({ username: "admin", passwordHash: pw, displayName: "平台管理员", role: "ADMIN" });
@@ -207,12 +208,51 @@ async function main() {
   // 一条已到期的复习
   await db.insert(schema.reviewItems).values({ studentId: lin.id, keyPointId: passages.get("cafeteria-leftovers")!.keyPoints[1].id, dueAt: new Date(Date.now() - 3600_000), intervalD: 1 });
 
-  console.log(`种子数据完成：${PASSAGES.length} 篇材料，${students.length + 1} 名学生，1 名教师，1 名管理员。`);
+  writeSeedSql();
+  console.log(`种子 SQL 已生成：${OUT}（${PASSAGES.length} 篇材料，${students.length + 1} 名学生，1 名教师，1 名管理员）`);
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exitCode = 1;
-  })
-  .finally(() => pool.end());
+/** 依外键顺序导出全部数据。users 与 classrooms 互相引用：先插入不带班级的用户，再插班级，最后补上用户的班级。 */
+const ORDER = [
+  "schools", "users", "classrooms", "passages", "content_cards", "key_points", "exercises", "assignments",
+  "sessions", "responses", "tutor_messages", "review_items", "ability_attempts", "mastery", "ai_calls",
+];
+
+function literal(v: unknown): string {
+  if (v === null || v === undefined) return "NULL";
+  if (typeof v === "number" || typeof v === "bigint") return String(v);
+  if (Buffer.isBuffer(v)) return `X'${v.toString("hex")}'`;
+  return `'${String(v).replace(/'/g, "''")}'`;
+}
+
+/** 标识符加双引号：key_points / exercises 里有列名 order（SQL 保留字） */
+const ident = (n: string) => `"${n}"`;
+
+function writeSeedSql() {
+  const lines = ["-- 由 scripts/seed.ts 生成，会清空并重建演示数据", "UPDATE users SET classroom_id = NULL;"];
+  for (const t of [...ORDER].reverse()) lines.push(`DELETE FROM ${ident(t)};`);
+  const classOf: [string, string][] = [];
+  for (const t of ORDER) {
+    for (const row of sqlite.prepare(`SELECT * FROM ${t}`).all() as Record<string, unknown>[]) {
+      if (t === "users" && row.classroom_id) {
+        classOf.push([row.id as string, row.classroom_id as string]);
+        row.classroom_id = null;
+      }
+      const cols = Object.keys(row);
+      lines.push(`INSERT INTO ${ident(t)} (${cols.map(ident).join(", ")}) VALUES (${cols.map((c) => literal(row[c])).join(", ")});`);
+    }
+    if (t === "classrooms") for (const [u, c] of classOf) lines.push(`UPDATE users SET classroom_id = ${literal(c)} WHERE id = ${literal(u)};`);
+  }
+  const known = new Set(ORDER);
+  const missing = (sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '__drizzle%'").all() as { name: string }[])
+    .map((r) => r.name)
+    .filter((n) => !known.has(n));
+  if (missing.length) throw new Error(`seed 导出顺序缺少表：${missing.join(", ")}`);
+  mkdirSync(".wrangler", { recursive: true });
+  writeFileSync(OUT, lines.join("\n") + "\n");
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exitCode = 1;
+});

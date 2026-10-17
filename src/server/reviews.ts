@@ -36,9 +36,9 @@ export async function answerReview(studentId: string, id: string, answer: string
   if (item.doneAt) throw new TrainingError(409, "这道复习题已经完成");
   const passed = matchKeyPoints(answer, [item.keyPoint]).length > 0;
   const now = new Date();
-  await db.transaction(async (tx) => {
-    await tx.update(reviewItems).set({ answer, passed, doneAt: now }).where(eq(reviewItems.id, id));
-    if (!passed) await tx.insert(reviewItems).values({ studentId, keyPointId: item.keyPointId, dueAt: retryAfterFail(now), intervalD: 2 });
-  });
+  await db.batch([
+    db.update(reviewItems).set({ answer, passed, doneAt: now }).where(eq(reviewItems.id, id)),
+    ...(passed ? [] : [db.insert(reviewItems).values({ studentId, keyPointId: item.keyPointId, dueAt: retryAfterFail(now), intervalD: 2 })]),
+  ]);
   return { passed, keyPoint: item.keyPoint.text };
 }

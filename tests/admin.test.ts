@@ -12,6 +12,7 @@ import {
   type SessionInput,
 } from "@/server/admin/metrics";
 import { CreateUser, UpdateUser } from "@/server/admin/schemas";
+import { hashPassword, verifyPassword } from "@/server/password";
 
 const NOW = new Date("2026-10-17T04:00:00Z"); // UTC+8 12:00
 const DAY = 24 * 3600_000;
@@ -151,4 +152,21 @@ it("homeFor 按角色返回首页", () => {
   expect(homeFor("ADMIN")).toBe("/admin");
   expect(homeFor("TEACHER")).toBe("/teacher");
   expect(homeFor("PARENT")).toBe("/teacher");
+});
+
+describe("密码哈希（PBKDF2）", () => {
+  it("同一密码每次加盐不同，且都能验证通过", async () => {
+    const a = await hashPassword("Bamboo123");
+    const b = await hashPassword("Bamboo123");
+    expect(a).toMatch(/^pbkdf2\$100000\$/);
+    expect(a).not.toBe(b);
+    expect(await verifyPassword("Bamboo123", a)).toBe(true);
+    expect(await verifyPassword("bamboo123", a)).toBe(false);
+  });
+
+  it("格式不对或迭代次数超限的哈希一律拒绝", async () => {
+    expect(await verifyPassword("x", "$2a$10$bcrypt-style")).toBe(false);
+    expect(await verifyPassword("x", "pbkdf2$999999999$AAAA$AAAA")).toBe(false);
+    expect(await verifyPassword("x", "")).toBe(false);
+  });
 });

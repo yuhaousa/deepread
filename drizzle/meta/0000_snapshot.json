@@ -1,92 +1,78 @@
 {
-  "id": "e79a4807-8403-4ee0-98dd-1f634e1dadf3",
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "1f706222-6e7d-478a-a034-6a0b0d6376f7",
   "prevId": "00000000-0000-0000-0000-000000000000",
-  "version": "7",
-  "dialect": "postgresql",
   "tables": {
-    "public.ability_attempts": {
+    "ability_attempts": {
       "name": "ability_attempts",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "student_id": {
           "name": "student_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "session_id": {
           "name": "session_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "ability": {
           "name": "ability",
-          "type": "ability",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "level": {
           "name": "level",
-          "type": "level",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "genre": {
           "name": "genre",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "score": {
           "name": "score",
           "type": "real",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         }
       },
       "indexes": {
         "ability_attempts_student": {
           "name": "ability_attempts_student",
           "columns": [
-            {
-              "expression": "student_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "ability",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "student_id",
+            "ability",
+            "created_at"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -119,125 +105,132 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.ai_calls": {
+    "ai_calls": {
       "name": "ai_calls",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "purpose": {
           "name": "purpose",
-          "type": "ai_purpose",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "provider": {
           "name": "provider",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "model": {
           "name": "model",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "user_hash": {
           "name": "user_hash",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "input_tok": {
           "name": "input_tok",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "output_tok": {
           "name": "output_tok",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "latency_ms": {
           "name": "latency_ms",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "ok": {
           "name": "ok",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "error": {
           "name": "error",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.assignments": {
+    "assignments": {
       "name": "assignments",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "classroom_id": {
           "name": "classroom_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "passage_id": {
           "name": "passage_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "due_at": {
           "name": "due_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         }
       },
       "indexes": {},
@@ -271,50 +264,52 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.classrooms": {
+    "classrooms": {
       "name": "classrooms",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "grade": {
           "name": "grade",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "school_id": {
           "name": "school_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "teacher_id": {
           "name": "teacher_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         }
       },
       "indexes": {},
@@ -348,82 +343,98 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.content_cards": {
+    "content_cards": {
       "name": "content_cards",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "passage_id": {
           "name": "passage_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "source": {
           "name": "source",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "structure": {
           "name": "structure",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "concepts": {
           "name": "concepts",
-          "type": "text[]",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "thesis_location": {
           "name": "thesis_location",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "misreadings": {
           "name": "misreadings",
-          "type": "text[]",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "prerequisites": {
           "name": "prerequisites",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "goals": {
           "name": "goals",
-          "type": "text[]",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "review": {
           "name": "review",
-          "type": "jsonb",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "ref_summary": {
           "name": "ref_summary",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "content_cards_passage_id_unique": {
+          "name": "content_cards_passage_id_unique",
+          "columns": [
+            "passage_id"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {
         "content_cards_passage_id_passages_id_fk": {
           "name": "content_cards_passage_id_passages_id_fk",
@@ -440,90 +451,70 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "content_cards_passage_id_unique": {
-          "name": "content_cards_passage_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "passage_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "public.exercises": {
+    "exercises": {
       "name": "exercises",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "passage_id": {
           "name": "passage_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "step": {
           "name": "step",
-          "type": "session_step",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "type": {
           "name": "type",
-          "type": "exercise_type",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "ability": {
           "name": "ability",
-          "type": "ability",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "order": {
           "name": "order",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "spec": {
           "name": "spec",
-          "type": "jsonb",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {
         "exercises_passage_order": {
           "name": "exercises_passage_order",
           "columns": [
-            {
-              "expression": "passage_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "order",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "passage_id",
+            "order"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -543,72 +534,62 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.key_points": {
+    "key_points": {
       "name": "key_points",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "passage_id": {
           "name": "passage_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "order": {
           "name": "order",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "text": {
           "name": "text",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "keywords": {
           "name": "keywords",
-          "type": "text[]",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "paragraph": {
           "name": "paragraph",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {
         "key_points_passage_order": {
           "name": "key_points_passage_order",
           "columns": [
-            {
-              "expression": "passage_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "order",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "passage_id",
+            "order"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -628,70 +609,56 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.mastery": {
+    "mastery": {
       "name": "mastery",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "student_id": {
           "name": "student_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "ability": {
           "name": "ability",
-          "type": "ability",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "level": {
           "name": "level",
-          "type": "level",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'L2'"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         }
       },
       "indexes": {
         "mastery_student_ability": {
           "name": "mastery_student_ability",
           "columns": [
-            {
-              "expression": "student_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "ability",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "student_id",
+            "ability"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -711,89 +678,94 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.passages": {
+    "passages": {
       "name": "passages",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "slug": {
           "name": "slug",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "title": {
           "name": "title",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "genre": {
           "name": "genre",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "grade": {
           "name": "grade",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "level": {
           "name": "level",
-          "type": "level",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "primary_ability": {
           "name": "primary_ability",
-          "type": "ability",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "tutor_role": {
           "name": "tutor_role",
-          "type": "tutor_role",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "lead": {
           "name": "lead",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "paragraphs": {
           "name": "paragraphs",
-          "type": "text[]",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "char_count": {
           "name": "char_count",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "status": {
           "name": "status",
-          "type": "passage_status",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'DRAFT'"
         },
         "version": {
@@ -801,128 +773,121 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 1
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
+      "indexes": {
         "passages_slug_unique": {
           "name": "passages_slug_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "slug"
-          ]
+          ],
+          "isUnique": true
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "public.responses": {
+    "responses": {
       "name": "responses",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "session_id": {
           "name": "session_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "kind": {
           "name": "kind",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "answer": {
           "name": "answer",
-          "type": "jsonb",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "score": {
           "name": "score",
           "type": "real",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "detail": {
           "name": "detail",
-          "type": "jsonb",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "source": {
           "name": "source",
-          "type": "score_source",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "feedback": {
           "name": "feedback",
-          "type": "jsonb",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "flagged": {
           "name": "flagged",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         }
       },
       "indexes": {
         "responses_session_kind": {
           "name": "responses_session_kind",
           "columns": [
-            {
-              "expression": "session_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "kind",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "session_id",
+            "kind"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -942,84 +907,76 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.review_items": {
+    "review_items": {
       "name": "review_items",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "student_id": {
           "name": "student_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "key_point_id": {
           "name": "key_point_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "due_at": {
           "name": "due_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "interval_d": {
           "name": "interval_d",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "answer": {
           "name": "answer",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "passed": {
           "name": "passed",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "done_at": {
           "name": "done_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
         "review_items_student_due": {
           "name": "review_items_student_due",
           "columns": [
-            {
-              "expression": "student_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "due_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "student_id",
+            "due_at"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1052,179 +1009,166 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.schools": {
+    "schools": {
       "name": "schools",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "region": {
           "name": "region",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'intl'"
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.sessions": {
+    "sessions": {
       "name": "sessions",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "student_id": {
           "name": "student_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "passage_id": {
           "name": "passage_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "passage_version": {
           "name": "passage_version",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "assignment_id": {
           "name": "assignment_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "step": {
           "name": "step",
-          "type": "session_step",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'PREDICT'"
         },
         "question": {
           "name": "question",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "highlights": {
           "name": "highlights",
-          "type": "text[]",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'{}'"
+          "autoincrement": false
         },
         "reading_seconds": {
           "name": "reading_seconds",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "lookbacks": {
           "name": "lookbacks",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "confidence": {
           "name": "confidence",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "summary": {
           "name": "summary",
-          "type": "jsonb",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "started_at": {
           "name": "started_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         },
         "completed_at": {
           "name": "completed_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
         "sessions_student_started": {
           "name": "sessions_student_started",
           "columns": [
-            {
-              "expression": "student_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "started_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "student_id",
+            "started_at"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         },
         "sessions_assignment": {
           "name": "sessions_assignment",
           "columns": [
-            {
-              "expression": "assignment_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "assignment_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1270,64 +1214,66 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.tutor_messages": {
+    "tutor_messages": {
       "name": "tutor_messages",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "session_id": {
           "name": "session_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "role": {
           "name": "role",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "tutor_role": {
           "name": "tutor_role",
-          "type": "tutor_role",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "step": {
           "name": "step",
-          "type": "session_step",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "content": {
           "name": "content",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "guardrail": {
           "name": "guardrail",
-          "type": "jsonb",
+          "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         }
       },
       "indexes": {},
@@ -1348,72 +1294,84 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.users": {
+    "users": {
       "name": "users",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "username": {
           "name": "username",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "password_hash": {
           "name": "password_hash",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "display_name": {
           "name": "display_name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "role": {
           "name": "role",
-          "type": "role",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "grade": {
           "name": "grade",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "guardian_consent_at": {
           "name": "guardian_consent_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "classroom_id": {
           "name": "classroom_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "users_username_unique": {
+          "name": "users_username_unique",
+          "columns": [
+            "username"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {
         "users_classroom_id_classrooms_id_fk": {
           "name": "users_classroom_id_classrooms_id_fk",
@@ -1430,130 +1388,18 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "users_username_unique": {
-          "name": "users_username_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     }
   },
-  "enums": {
-    "public.ability": {
-      "name": "ability",
-      "schema": "public",
-      "values": [
-        "FOCUS",
-        "RECALL",
-        "COMPREHEND",
-        "ANALYZE",
-        "VERIFY",
-        "EXPRESS"
-      ]
-    },
-    "public.ai_purpose": {
-      "name": "ai_purpose",
-      "schema": "public",
-      "values": [
-        "RECALL",
-        "RUBRIC",
-        "TUTOR",
-        "GUARDRAIL"
-      ]
-    },
-    "public.exercise_type": {
-      "name": "exercise_type",
-      "schema": "public",
-      "values": [
-        "PREDICT",
-        "ROLES",
-        "AUDIT",
-        "QUIZ",
-        "SEQUENCE",
-        "SUMMARY",
-        "TRANSFER"
-      ]
-    },
-    "public.level": {
-      "name": "level",
-      "schema": "public",
-      "values": [
-        "L1",
-        "L2",
-        "L3",
-        "L4",
-        "L5"
-      ]
-    },
-    "public.passage_status": {
-      "name": "passage_status",
-      "schema": "public",
-      "values": [
-        "DRAFT",
-        "IN_REVIEW",
-        "PUBLISHED",
-        "ARCHIVED"
-      ]
-    },
-    "public.role": {
-      "name": "role",
-      "schema": "public",
-      "values": [
-        "STUDENT",
-        "TEACHER",
-        "PARENT",
-        "ADMIN",
-        "EDITOR"
-      ]
-    },
-    "public.score_source": {
-      "name": "score_source",
-      "schema": "public",
-      "values": [
-        "RULE",
-        "KEYWORD",
-        "AI",
-        "TEACHER"
-      ]
-    },
-    "public.session_step": {
-      "name": "session_step",
-      "schema": "public",
-      "values": [
-        "PREDICT",
-        "READ",
-        "RECALL",
-        "ANALYZE",
-        "EXPRESS",
-        "FEEDBACK",
-        "DONE"
-      ]
-    },
-    "public.tutor_role": {
-      "name": "tutor_role",
-      "schema": "public",
-      "values": [
-        "READING",
-        "RECALL_COACH",
-        "DEBATE",
-        "VERIFY"
-      ]
-    }
-  },
-  "schemas": {},
-  "sequences": {},
-  "roles": {},
-  "policies": {},
   "views": {},
+  "enums": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
   }
 }

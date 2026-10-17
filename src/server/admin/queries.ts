@@ -1,12 +1,12 @@
 // 管理后台 · 数据查询：平台总览、学情表现、用户列表、班级概况。
 // 只供 ADMIN 使用，调用方负责鉴权。
 
-import { and, asc, count, desc, eq, gte, ilike, isNotNull, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, isNotNull, or, sql } from "drizzle-orm";
 import { ABILITIES, type AbilityKey } from "@/lib/domain";
 import type { RoleKey } from "@/server/auth";
 import { db, schema } from "@/lib/db";
 import { localTimeAfter } from "@/server/learner/schedule";
-import { learnerPerformance, like } from "@/server/learner/performance";
+import { contains, learnerPerformance } from "@/server/learner/performance";
 
 export { learnerPerformance, learnerSessions } from "@/server/learner/performance";
 import { aiSummary, dailySeries, levelDistribution } from "@/server/admin/metrics";
@@ -26,7 +26,7 @@ export async function dashboardData(now = new Date()) {
       .from(sessions)
       .where(or(gte(sessions.startedAt, since14), gte(sessions.completedAt, since14))),
     db
-      .select({ ability: abilityAttempts.ability, avg: sql<number>`avg(${abilityAttempts.score})::float`, n: count() })
+      .select({ ability: abilityAttempts.ability, avg: sql<number>`avg(${abilityAttempts.score})`, n: count() })
       .from(abilityAttempts)
       .where(gte(abilityAttempts.createdAt, since28))
       .groupBy(abilityAttempts.ability),
@@ -34,9 +34,9 @@ export async function dashboardData(now = new Date()) {
       .select({
         purpose: aiCalls.purpose,
         calls: count(),
-        failures: sql<number>`count(*) filter (where not ${aiCalls.ok})::int`,
-        avgLatencyMs: sql<number | null>`avg(${aiCalls.latencyMs})::float`,
-        tokens: sql<number>`coalesce(sum(coalesce(${aiCalls.inputTok}, 0) + coalesce(${aiCalls.outputTok}, 0)), 0)::int`,
+        failures: sql<number>`coalesce(sum(case when ${aiCalls.ok} then 0 else 1 end), 0)`,
+        avgLatencyMs: sql<number | null>`avg(${aiCalls.latencyMs})`,
+        tokens: sql<number>`coalesce(sum(coalesce(${aiCalls.inputTok}, 0) + coalesce(${aiCalls.outputTok}, 0)), 0)`,
       })
       .from(aiCalls)
       .where(gte(aiCalls.createdAt, since7))
@@ -45,7 +45,7 @@ export async function dashboardData(now = new Date()) {
     db
       .select({
         replies: count(),
-        rewritten: sql<number>`count(*) filter (where ${tutorMessages.guardrail}->>'rewritten' = 'true')::int`,
+        rewritten: sql<number>`coalesce(sum(case when json_extract(${tutorMessages.guardrail}, '$.rewritten') = 1 then 1 else 0 end), 0)`,
       })
       .from(tutorMessages)
       .where(and(eq(tutorMessages.role, "assistant"), gte(tutorMessages.createdAt, since7))),
@@ -115,7 +115,7 @@ export async function listUsers(opts: { q?: string; role?: RoleKey; classroomId?
       and(
         opts.role ? eq(users.role, opts.role) : undefined,
         opts.classroomId ? eq(users.classroomId, opts.classroomId) : undefined,
-        q ? or(ilike(users.username, like(q)), ilike(users.displayName, like(q))) : undefined,
+        q ? or(contains(users.username, q), contains(users.displayName, q)) : undefined,
       ),
     )
     .orderBy(asc(users.role), asc(users.username));

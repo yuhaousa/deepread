@@ -1,0 +1,41 @@
+// Cloudflare Workers 部署配置（OpenNext 适配器）。
+// D1 database created in the Cloudflare dashboard; see binding below.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "deepread",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      // OpenNext 用于缓存重新验证的自引用
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "deepread"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "deepread",
+      "database_id": "d5ca97ea-512a-4bb7-8f4e-a84059bca280",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  // 可选：R2 文件存储（导出、上传材料、备份）。创建桶后取消注释：wrangler r2 bucket create deepread-files
+  // "r2_buckets": [{ "binding": "FILES", "bucket_name": "deepread-files" }],
+  "vars": {
+    // 非机密配置；API Key 与 AUTH_SECRET 用 wrangler secret put 设置
+    "DEPLOY_REGION": "intl",
+    "DAILY_SESSION_LIMIT": "2",
+    "LLM_QUICK_PROVIDER": "none",
+    "LLM_QUICK_MODEL": "",
+    "LLM_DEEP_PROVIDER": "none",
+    "LLM_DEEP_MODEL": "",
+    "LLM_TIMEOUT_MS": "8000"
+  },
+  "observability": { "enabled": true }
+}

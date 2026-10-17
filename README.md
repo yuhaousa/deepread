@@ -7,15 +7,15 @@ AI 时代的深度阅读与判断力训练平台。面向初中到高中学生�
 
 ## 快速开始
 
-需要 Node 22+ 和 PostgreSQL 16。
+运行在 Cloudflare Workers 上，数据库为 Cloudflare D1（SQLite）。本地开发不需要 Cloudflare 账号：wrangler 会在 `.wrangler/` 下模拟 D1。需要 Node 22+。
 
 ```bash
-cp .env.example .env            # 按需修改 DATABASE_URL、AUTH_SECRET、模型配置
-docker compose up -d db         # 或使用自己的 Postgres
 npm install
-npm run db:migrate              # 建表
-npm run db:seed                 # 19 篇分级材料 + 演示学校/班级/账号（会清空数据）
-npm run dev                     # http://localhost:3000 （未登录时先看到落地页 /welcome）
+cp .dev.vars.example .dev.vars  # 本地机密：AUTH_SECRET、模型 Key
+npm run db:migrate:local        # 在本地 D1 建表
+npm run db:seed:local           # 19 篇分级材料 + 演示学校/班级/账号（会清空数据）
+npm run dev                     # http://localhost:3000 （Next.js 开发服务器 + 本地 D1）
+npm run preview                 # 可选：按线上方式构建，在 workerd 中运行 http://localhost:8787
 ```
 
 演示账号（密码均为 `Bamboo123`）：
@@ -33,7 +33,7 @@ npm run dev                     # http://localhost:3000 （未登录时先看到
 
 ## 模型配置
 
-`quick` 档（回忆判定、导师提示）和 `deep` 档（摘要与迁移量表）分别配置提供方与模型，见 `.env.example`。
+`quick` 档（回忆判定、导师提示）和 `deep` 档（摘要与迁移量表）分别配置提供方与模型：提供方、模型名、区域写在 `wrangler.jsonc` 的 `vars`，API Key 写在 `.dev.vars`（本地）或用 `wrangler secret put`（线上）。
 
 | 区域 `DEPLOY_REGION` | 允许的提供方 |
 | --- | --- |
@@ -65,8 +65,9 @@ src/
     training.ts           训练闭环服务
     reports.ts            学生报告、班级洞察
     admin/                管理后台：统计纯函数（metrics）、查询、用户与班级管理、请求体校验
-drizzle/                  SQL 迁移
-scripts/                  migrate / seed
+drizzle/                  D1（SQLite）迁移，由 wrangler d1 migrations apply 执行
+scripts/seed.ts           在内存 SQLite 生成演示数据，导出 .wrangler/seed.sql
+wrangler.jsonc            Workers 与 D1 / R2 绑定、非机密配置
 tests/                    单元测试（vitest）
 ```
 
@@ -77,7 +78,7 @@ tests/                    单元测试（vitest）
 - **回忆评分取并集。** 关键词匹配作为离线基线，AI 语义判定作为补充，两者取并集；AI 反馈本身也要过护栏。
 - **量表低置信度进抽检。** AI 量表 `confidence < 0.6` 的作答标记 `flagged`，进入教师抽检。
 - **等级规则**（`learner/levels.ts`）：在本级或更高等级材料上连续 4 次达标率 ≥ 70%，且最近一次 7 天复习没有失败，即升一级；本级连续 3 次 < 40% 推送补练，不显示降级。
-- **内容库可直接阅读。** 每篇材料都能点开阅读原文；学生端不含答案与关键点。每日训练节数上限只限制开始新训练，不限制阅读和继续进行中的训练；演示时可在 `.env` 调大 `DAILY_SESSION_LIMIT`。
+- **内容库可直接阅读。** 每篇材料都能点开阅读原文；学生端不含答案与关键点。每日训练节数上限只限制开始新训练，不限制阅读和继续进行中的训练；演示时可在 `wrangler.jsonc` 的 `vars` 中调大 `DAILY_SESSION_LIMIT`。
 - **合规。** 监护人未同意时不能使用 AI 对话；`DELETE /api/me/data` 一键删除作答原文与对话；每日训练节数上限（`DAILY_SESSION_LIMIT`）；所有 AI 输出标注“AI 导师”。
 
 ## API 一览
@@ -120,15 +121,36 @@ tests/                    单元测试（vitest）
 ```bash
 npm run typecheck    # TypeScript
 npm test             # 单元测试：内容完整性（含分级覆盖与篇幅）、评分、护栏红队、等级、调度、路由、班级洞察、管理后台统计
-npm run build
-npm run db:generate  # 修改 src/db/schema.ts 后生成迁移
+npm run preview      # OpenNext 构建并在 workerd 中运行（与线上一致）
+npm run db:generate  # 修改 src/db/schema.ts 后生成迁移，再 npm run db:migrate:local
+npm run cf-typegen   # 修改 wrangler.jsonc 后重新生成 cloudflare-env.d.ts
 ```
+
+## 部署到 Cloudflare
+
+一次性准备（需要 Cloudflare 账号，`npx wrangler login`）：
+
+```bash
+npx wrangler d1 create deepread          # 把返回的 database_id 填进 wrangler.jsonc
+npx wrangler secret put AUTH_SECRET      # 至少 32 字符随机串；模型 Key 同样用 secret put
+npm run db:migrate:remote                # 在线上 D1 建表
+npm run db:seed:remote                   # 可选：写入演示数据（会清空线上数据）
+npm run deploy                           # 构建并部署，输出 *.workers.dev 地址
+```
+
+之后每次发布只需 `npm run db:migrate:remote && npm run deploy`。也可以交给 GitHub Actions：在仓库设置中添加变量 `CF_DEPLOY=true`、机密 `CLOUDFLARE_API_TOKEN`（含 Workers 与 D1 编辑权限）和 `CLOUDFLARE_ACCOUNT_ID`，推送到 `main` 即自动迁移并部署。
+
+- **R2（可选）**：目前没有文件存储需求。需要存放导出、上传材料或备份时，`npx wrangler r2 bucket create deepread-files`，并取消 `wrangler.jsonc` 中 `r2_buckets` 的注释。
+- **D1 的取舍**：D1 不支持交互式事务，多步写入用 `db.batch()`（整体原子执行）；单条语句最多 100 个绑定参数，关联查询用子查询而不是长 ID 列表。
+- **密码**：使用 Web Crypto PBKDF2（10 万次迭代），适合 Workers 的 CPU 限制。
+- **中国大陆**：D1 无法部署在中国大陆。`DEPLOY_REGION=cn`（数据不出境）的场景需要境内数据库与托管，不适合本方案。
+- **Next.js 16 的 proxy.ts**：OpenNext 构建时会提示“Node.js middleware 在 Cloudflare 上为实验性支持”。本项目的页面访问控制已在 workerd 中验证；如遇问题，可改回 `middleware.ts`（Edge 运行时）。
 
 ## 已知差距（进入试点前要补）
 
 - 第 8 节的 6 篇示例材料为 224–322 字，短于量表中 L2–L4 的篇幅要求；分级扩充的 10 篇已按量表篇幅编写（测试校验）。正式内容仍需走审核流。
 - 尚未实现：内容后台（制卡出题、审核发布）、入学定级测、家长周报推送、教师抽检改分界面、导师流式输出。
-- 复习提醒的推送（BullMQ / 消息通道）尚未接入，目前复习在首页与复习页展示。
+- 复习提醒的推送（Cloudflare Queues / Cron Triggers）尚未接入，目前复习在首页与复习页展示。
 
 ## 分级内容一览
 

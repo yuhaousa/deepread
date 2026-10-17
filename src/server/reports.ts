@@ -128,7 +128,8 @@ export async function classroomInsights(classroomId: string, assignmentId?: stri
   const recentSpeed: Record<string, number[]> = {};
   if (students.length) {
     const recent = await db.query.sessions.findMany({
-      where: and(inArray(sessions.studentId, students.map((s) => s.id)), isNotNull(sessions.completedAt)),
+      // 子查询筛本班学生，避免把所有 ID 作为参数传入（D1 单条语句最多 100 个参数）
+      where: and(inArray(sessions.studentId, db.select({ id: users.id }).from(users).where(eq(users.classroomId, classroomId))), isNotNull(sessions.completedAt)),
       with: { responses: true, passage: { columns: { paragraphs: true, lead: true } } },
       orderBy: desc(sessions.completedAt),
     });
