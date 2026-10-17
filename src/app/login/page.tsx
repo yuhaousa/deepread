@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { homeFor } from "@/lib/home";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function LoginPage() {
     const data = await res.json();
     setBusy(false);
     if (!res.ok) return setError(data.error ?? "登录失败");
-    router.push(data.role === "STUDENT" ? "/" : "/teacher");
+    router.push(homeFor(data.role));
     router.refresh();
   }
 

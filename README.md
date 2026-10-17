@@ -22,7 +22,7 @@ npm run dev                     # http://localhost:3000 （未登录时先看到
 
 | 角色 | 账号 | 说明 |
 | --- | --- | --- |
-| 管理员 | `admin` | 可查看全部班级与学生 |
+| 管理员 | `admin` | 管理后台 `/admin`：平台总览、用户管理、学情表现、班级；也可进入教师端 |
 | 教师 | `teacher` | 王老师，初二（3）班 |
 | 学生 | `student` 体验同学 | 已获监护人同意，没有历史记录，适合从头体验 |
 | 学生 | `s2401` 林同学 | 有近四周训练记录、作品对比和到期复习 |
@@ -51,6 +51,7 @@ src/
     teacher/                 教师端：共性错误、分组建议、布置任务
     levels/                  阅读能力等级量表
     welcome/                 公开落地页（未登录访问首页时进入）
+    admin/                   管理后台：总览、用户管理、学情表现与学生报告、班级
   content/passages.ts     种子材料（19 篇，含内容卡片、关键点、题目）
   content/passages-leveled.ts  分级扩充材料（L1–L5，按量表字数编写）
   db/schema.ts            数据模型（Drizzle ORM）
@@ -62,6 +63,7 @@ src/
     llm/router.ts         多模型路由（按区域 / 档位）
     training.ts           训练闭环服务
     reports.ts            学生报告、班级洞察
+    admin/                管理后台：统计纯函数（metrics）、查询、用户与班级管理、请求体校验
 drizzle/                  SQL 迁移
 scripts/                  migrate / seed
 tests/                    单元测试（vitest）
@@ -94,12 +96,27 @@ tests/                    单元测试（vitest）
 | GET | `/api/classrooms/:id/insights` | 班级洞察（`?assignmentId=`） |
 | POST | `/api/assignments` | 布置任务 |
 | DELETE | `/api/me/data` | 删除我的作答数据 |
+| GET / POST | `/api/admin/users` | 用户列表（`?q=&role=&classroomId=`）/ 新建用户（管理员） |
+| PATCH / DELETE | `/api/admin/users/:id` | 修改姓名、角色、班级、监护人同意、重置密码 / 删除用户 |
+| GET / POST | `/api/admin/classrooms` · PATCH `/api/admin/classrooms/:id` | 班级概况 / 新建班级 / 更换任课教师 |
+| GET | `/api/admin/learners` · `/api/admin/learners/export` | 学情表现（JSON）/ 导出 CSV |
+
+## 管理后台
+
+管理员登录后进入 `/admin`（其他角色访问会被重定向回各自首页，API 返回 403）。
+
+- **平台总览**：学生与活跃度、近 7 天完成训练与完成率、需要关注与待抽检人数；近 14 天每日完成训练、六项能力近 28 天平均达标率、能力等级分布（均附数据表视图）；完成最多的材料；AI 调用次数、失败率、延迟、Token 与导师护栏改写次数。
+- **用户管理**：按账号 / 姓名搜索，按角色、班级筛选；新建用户；修改姓名、角色、班级、年级、监护人同意，重置密码；删除用户（学生的训练数据级联删除）。护栏：不能删除或降级自己、至少保留一名管理员、仍有任教班级的教师不能删除或改角色、账号重复返回 409。
+- **学情表现**：每名学生的已完成 / 进行中训练、最近训练、平均回忆覆盖 / 结构分析 / 摘要量表、六项能力等级、待复习数与预警（回忆连续偏低、14 天未训练、未开始、监护人未同意）；可排序、筛选、导出 CSV（带 BOM，防公式注入）。点击姓名查看完整学生报告与训练记录。
+- **班级**：班级、任课教师、学生数、任务数；新建班级、更换任课教师，并可直接打开该班的教师端洞察。
+
+注意：会话令牌 7 天有效，修改角色或删除账号后，对方已登录的会话要到令牌过期或重新登录才会更新。
 
 ## 开发命令
 
 ```bash
 npm run typecheck    # TypeScript
-npm test             # 单元测试：内容完整性（含分级覆盖与篇幅）、评分、护栏红队、等级、调度、路由、班级洞察
+npm test             # 单元测试：内容完整性（含分级覆盖与篇幅）、评分、护栏红队、等级、调度、路由、班级洞察、管理后台统计
 npm run build
 npm run db:generate  # 修改 src/db/schema.ts 后生成迁移
 ```

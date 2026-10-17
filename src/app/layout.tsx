@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { currentUser } from "@/server/auth";
+import { homeFor } from "@/lib/home";
 import { Nav, LogoutButton } from "./nav";
 import "./globals.css";
 
@@ -24,11 +25,19 @@ const LINKS = {
     { href: "/library", label: "内容库" },
     { href: "/levels", label: "能力量表" },
   ],
+  ADMIN: [
+    { href: "/admin", label: "总览" },
+    { href: "/admin/users", label: "用户管理" },
+    { href: "/admin/learners", label: "学情表现" },
+    { href: "/admin/classes", label: "班级" },
+    { href: "/teacher", label: "教师端" },
+    { href: "/library", label: "内容库" },
+  ],
 } as const;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
-  const links = user ? (user.role === "STUDENT" ? LINKS.STUDENT : LINKS.TEACHER) : [];
+  const links = user ? (user.role === "STUDENT" ? LINKS.STUDENT : user.role === "ADMIN" ? LINKS.ADMIN : LINKS.TEACHER) : [];
   return (
     <html lang="zh-CN">
       <head>
@@ -42,7 +51,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <header className="top">
           <div className="wrap">
-            <Link href={user ? "/" : "/welcome"} className="brand" style={{ textDecoration: "none" }}>
+            <Link href={user ? homeFor(user.role) : "/welcome"} className="brand" style={{ textDecoration: "none" }}>
               <b>深读</b>
               <span>DEEPREAD</span>
             </Link>
