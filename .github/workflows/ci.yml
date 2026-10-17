@@ -20,150 +20,47 @@ jobs:
         env:
           AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
 
-  # 推送到 main 时部署。需要在仓库设置中配置：
-  #   变量 CF_DEPLOY=true；机密 CLOUDFLARE_API_TOKEN、CLOUDFLARE_ACCOUNT_ID。
   deploy:
     needs: check
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.CF_DEPLOY == 'true'
     runs-on: ubuntu-latest
     env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
-      # 用 Token 可访问的账号校验仓库配置，单账号时自动修正过期/填错的 Account ID。
+      # Token 可访问单一账号时，自动修正过期或填错的 Account ID。
       - name: Resolve Cloudflare account
         shell: bash
         run: |
           set -euo pipefail
-          response="$(curl -sS -w '\n%{http_code}' https://api.cloudflare.com/client/v4/accounts \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+          http_code="$(curl -sS -o /tmp/cloudflare-accounts.json -w '%{http_code}' \
+            https://api.cloudflare.com/client/v4/accounts \
+            -H "Authorization: Bearer \${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json")"
-          http_code="${response##*
-      # 仅在不存在 deepread 数据库时创建新库；仅新库会导入演示数据。
-      - name: Resolve Cloudflare D1 database
-        id: d1
-        shell: bash
-        run: |
-          set -euo pipefail
-          databases="$(npx wrangler d1 list --json --config wrangler.jsonc)"
-          database_id="$(printf '%s' "$databases" | node -e '
-            let input = "";
-            process.stdin.on("data", chunk => input += chunk);
-            process.stdin.on("end", () => {
-              const data = JSON.parse(input);
-              const rows = Array.isArray(data) ? data : (data.result ?? data.databases ?? []);
-              const matches = rows.filter(row => row.name === "deepread");
-              if (matches.length > 1) {
-                console.error("More than one D1 database is named deepread; refusing to choose.");
-                process.exit(2);
-              }
-              const row = matches[0];
-              process.stdout.write(row ? (row.uuid ?? row.database_id ?? row.id ?? "") : "");
-            });
-          ')"
-          created=false
-          if [ -z "$database_id" ]; then
-            create_output="$(npx wrangler d1 create deepread --json --config wrangler.jsonc)"
-            database_id="$(printf '%s' "$create_output" | grep -Eo '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}' | head -n 1 || true)"
-            if [ -z "$database_id" ]; then
-              echo "Could not read the new D1 database ID from Wrangler output." >&2
-              exit 1
-            fi
-            created=true
-          fi
-          DB_ID="$database_id" node -e '
-            const fs = require("node:fs");
-            const path = "wrangler.jsonc";
-            const config = fs.readFileSync(path, "utf8");
-            const id = process.env.DB_ID;
-            const updated = config.replace(/("database_id"\s*:\s*")[^"]+(")/, (_, before, after) => before + id + after);
-            if (updated === config) throw new Error("Could not find database_id in wrangler.jsonc");
-            fs.writeFileSync(path, updated);
-          '
-          echo "Resolved D1 database: $database_id"
-          echo "created=$created" >> "$GITHUB_OUTPUT"
-      - run: npm run db:migrate:remote
-      - name: Seed newly created database
-        if: steps.d1.outputs.created == 'true'
-        run: npm run db:seed:remote
-      - run: npm run deploy
-\n'}"
-          body="${response%
-      # 仅在不存在 deepread 数据库时创建新库；仅新库会导入演示数据。
-      - name: Resolve Cloudflare D1 database
-        id: d1
-        shell: bash
-        run: |
-          set -euo pipefail
-          databases="$(npx wrangler d1 list --json --config wrangler.jsonc)"
-          database_id="$(printf '%s' "$databases" | node -e '
-            let input = "";
-            process.stdin.on("data", chunk => input += chunk);
-            process.stdin.on("end", () => {
-              const data = JSON.parse(input);
-              const rows = Array.isArray(data) ? data : (data.result ?? data.databases ?? []);
-              const matches = rows.filter(row => row.name === "deepread");
-              if (matches.length > 1) {
-                console.error("More than one D1 database is named deepread; refusing to choose.");
-                process.exit(2);
-              }
-              const row = matches[0];
-              process.stdout.write(row ? (row.uuid ?? row.database_id ?? row.id ?? "") : "");
-            });
-          ')"
-          created=false
-          if [ -z "$database_id" ]; then
-            create_output="$(npx wrangler d1 create deepread --json --config wrangler.jsonc)"
-            database_id="$(printf '%s' "$create_output" | grep -Eo '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}' | head -n 1 || true)"
-            if [ -z "$database_id" ]; then
-              echo "Could not read the new D1 database ID from Wrangler output." >&2
-              exit 1
-            fi
-            created=true
-          fi
-          DB_ID="$database_id" node -e '
-            const fs = require("node:fs");
-            const path = "wrangler.jsonc";
-            const config = fs.readFileSync(path, "utf8");
-            const id = process.env.DB_ID;
-            const updated = config.replace(/("database_id"\s*:\s*")[^"]+(")/, (_, before, after) => before + id + after);
-            if (updated === config) throw new Error("Could not find database_id in wrangler.jsonc");
-            fs.writeFileSync(path, updated);
-          '
-          echo "Resolved D1 database: $database_id"
-          echo "created=$created" >> "$GITHUB_OUTPUT"
-      - run: npm run db:migrate:remote
-      - name: Seed newly created database
-        if: steps.d1.outputs.created == 'true'
-        run: npm run db:seed:remote
-      - run: npm run deploy
-\n'*}"
           if [ "$http_code" != "200" ]; then
             echo "Cloudflare token could not list its accounts (HTTP $http_code). Check token permissions." >&2
             exit 1
           fi
-          account_id="$(printf '%s' "$body" | CONFIGURED_ACCOUNT_ID="$CLOUDFLARE_ACCOUNT_ID" node -e '
-            let input = "";
-            process.stdin.on("data", chunk => input += chunk);
-            process.stdin.on("end", () => {
-              const response = JSON.parse(input);
-              const accounts = response.result ?? [];
-              const configured = process.env.CONFIGURED_ACCOUNT_ID;
-              const match = accounts.find(account => account.id === configured);
-              if (match) return process.stdout.write(match.id);
-              if (accounts.length === 1) return process.stdout.write(accounts[0].id);
-              console.error("Configured account ID is not accessible and the token has multiple or no accounts.");
+          account_id="$(CONFIGURED_ACCOUNT_ID="$CLOUDFLARE_ACCOUNT_ID" node -e '
+            const fs = require("node:fs");
+            const response = JSON.parse(fs.readFileSync("/tmp/cloudflare-accounts.json", "utf8"));
+            const accounts = response.result ?? [];
+            const configured = process.env.CONFIGURED_ACCOUNT_ID;
+            const match = accounts.find(account => account.id === configured);
+            if (match) process.stdout.write(match.id);
+            else if (accounts.length === 1) process.stdout.write(accounts[0].id);
+            else {
+              console.error("Configured account ID is inaccessible and the token has multiple or no accounts.");
               process.exit(1);
-            });
+            }
           ')"
           echo "CLOUDFLARE_ACCOUNT_ID=$account_id" >> "$GITHUB_ENV"
           echo "Cloudflare account verified."
-      # 按账号内数据库名称解析真实 ID，避免仓库中的旧 ID 导致部署失败。
-      # 仅在不存在 deepread 数据库时创建新库；仅新库会导入演示数据。
+      # 按账号内数据库名称解析真实 ID；仅不存在时创建，并只给新库导入演示数据。
       - name: Resolve Cloudflare D1 database
         id: d1
         shell: bash
