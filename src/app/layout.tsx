@@ -57,7 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </Link>
             {user && <Nav links={[...links]} />}
             {!user && (
-              <Link href="/login" className="btn ghost login-link">
+              <Link href="/login" className="btn green login-link">
                 登录
               </Link>
             )}

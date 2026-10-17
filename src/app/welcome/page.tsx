@@ -1,6 +1,7 @@
 // 公开落地页：未登录访客的首页。内容全部来自静态材料与领域常量，不依赖数据库。
 import Link from "next/link";
 import { PASSAGES } from "@/content/passages";
+import { HeroSlider } from "./hero-slider";
 import { ABILITIES, ABILITY_META, LEVELS, LEVEL_META, STEPS, STEP_LABEL, TUTOR_ROLE_LABEL, type StepKey } from "@/lib/domain";
 
 export const metadata = { title: "深读 DeepRead · AI 时代的深度阅读训练" };
@@ -32,52 +33,28 @@ export default function Welcome() {
 
   return (
     <div className="landing">
-      <section className="hero">
+      <HeroSlider />
+
+      <section className="hero-stats" aria-label="平台数据">
         <div>
-          <div className="eyebrow">AI 时代的深度阅读与判断力训练</div>
-          <h1>
-            读懂原文，
-            <br />
-            才能<em>读懂 AI</em>。
-          </h1>
-          <p className="lede">
-            深读是面向初中到高中学生的阅读训练平台。每天一篇短文、15–25 分钟，用六步闭环练出四件事：抓得住重点、记得住、讲得清，还能核查 AI 给出的答案。AI 只做导师——给提示，不给答案。
-          </p>
-          <div className="cta">
-            <Link className="btn green" href="/login">
-              登录开始训练
-            </Link>
-            <a className="btn ghost" href="#loop">
-              看看一节课怎么上
-            </a>
-          </div>
-          <div className="stats">
-            <div>
-              <b>{PASSAGES.length}</b>
-              <span>篇分级原创材料</span>
-            </div>
-            <div>
-              <b>{LEVELS.length}</b>
-              <span>级能力量表 L1–L5</span>
-            </div>
-            <div>
-              <b>{ABILITIES.length}</b>
-              <span>项可观察的阅读能力</span>
-            </div>
-            <div>
-              <b>15–25</b>
-              <span>分钟 / 每日训练</span>
-            </div>
-          </div>
+          <b>{PASSAGES.length}</b>
+          <span>篇分级原创材料</span>
         </div>
-        <div className="sheet" aria-label="训练界面示意">
-          <div className="note sheet-cap">第 3 步 · 合书回忆前的阅读页</div>
-          郊区多是农田、树林和水面，植物通过蒸腾作用把水分散发到空气中，这个过程会带走热量；
-          <mark>城市里则铺满了沥青、水泥和砖石，它们白天大量吸收太阳辐射，夜晚再慢慢把热量释放出来。</mark>
-          <div className="q">
-            <b>AI 导师</b>　你标出了“夜晚释放热量”。想一想，这能解释热岛为什么在夜晚更明显吗？先别回看，用自己的话说说。
-          </div>
+        <div>
+          <b>{LEVELS.length}</b>
+          <span>级能力量表 L1–L5</span>
         </div>
+        <div>
+          <b>{ABILITIES.length}</b>
+          <span>项可观察的阅读能力</span>
+        </div>
+        <div>
+          <b>15–25</b>
+          <span>分钟 / 每日训练</span>
+        </div>
+        <Link className="btn green" href="/login">
+          登录
+        </Link>
       </section>
 
       <section className="sec" id="loop">
