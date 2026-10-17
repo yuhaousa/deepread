@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}</style>
+<title>深读 DeepRead</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: an app shell (sticky tab bar) over a reading desk — paper sheet for texts, a quiet side rail for steps and the AI tutor. */
+:root{
+  --bg:#F3F5F4; --paper:#FFFFFF; --ink:#1B2A4A; --ink-2:#4A5772; --mute:#7B869A; --line:#DCE2E6;
+  --bamboo:#2E7D5B; --bamboo-soft:#E3F1EA; --gold:#E8A33D; --mark:#FBE7B8; --navy-soft:#E7ECF5;
+  --good:#2E7D5B; --warn:#B7791F; --bad:#B4413C; --bad-soft:#F8E6E4;
+  --f-read:"Noto Serif SC","Songti SC","STSong",serif;
+  --f-ui:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161F; --paper:#18202C; --ink:#E6EBF3; --ink-2:#B3BDCD; --mute:#8592A6; --line:#2B3545;
+  --bamboo:#5DBB8F; --bamboo-soft:#17332A; --gold:#F0B65A; --mark:#4A3C1C; --navy-soft:#1F2A3D;
+  --good:#5DBB8F; --warn:#E3A84C; --bad:#E07A73; --bad-soft:#3A2021; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161F; --paper:#18202C; --ink:#E6EBF3; --ink-2:#B3BDCD; --mute:#8592A6; --line:#2B3545;
+  --bamboo:#5DBB8F; --bamboo-soft:#17332A; --gold:#F0B65A; --mark:#4A3C1C; --navy-soft:#1F2A3D;
+  --good:#5DBB8F; --warn:#E3A84C; --bad:#E07A73; --bad-soft:#3A2021; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-ui);font-size:15px;line-height:1.65}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+h1,h2,h3{text-wrap:balance;line-height:1.3;margin:0}
+p{margin:0}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--paper);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:18px;min-height:58px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:8px;margin-right:auto}
+.brand b{font-family:var(--f-read);font-size:22px;letter-spacing:.06em}
+.brand span{font-family:var(--f-num);font-size:12px;color:var(--mute);letter-spacing:.08em}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:100%}
+.tabs button{background:none;border:0;padding:16px 12px 14px;cursor:pointer;color:var(--ink-2);border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--bamboo);font-weight:500}
+main{padding-block:28px 80px}
+.panel[hidden]{display:none}
+.eyebrow{font-family:var(--f-num);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--bamboo)}
+.lede{color:var(--ink-2);max-width:62ch}
+.sec{display:grid;gap:14px;margin-top:44px}
+.sec>h2{font-size:22px}
+.note{font-size:12.5px;color:var(--mute)}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--navy-soft);color:var(--ink-2);white-space:nowrap}
+.tag.g{background:var(--bamboo-soft);color:var(--bamboo)}
+.tag.o{background:var(--mark);color:var(--ink)}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--paper);padding:9px 18px;border-radius:8px;cursor:pointer;font-weight:500}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.green{background:var(--bamboo);border-color:var(--bamboo);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.card h3{font-size:16px;margin-bottom:6px}
+.card p{color:var(--ink-2);font-size:14px}
+
+/* overview hero */
+.hero{display:grid;grid-template-columns:1.25fr 1fr;gap:32px;align-items:center}
+.hero h1{font-family:var(--f-read);font-size:clamp(30px,5vw,48px);font-weight:700;letter-spacing:.02em;margin:10px 0 14px}
+.hero h1 em{font-style:normal;background:linear-gradient(transparent 58%,var(--mark) 58%)}
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:22px 24px;box-shadow:0 1px 0 var(--line),0 12px 30px -18px rgba(27,42,74,.35);font-family:var(--f-read);font-size:15px;line-height:2;position:relative}
+.sheet .q{font-family:var(--f-ui);font-size:13px;margin-top:12px;padding:10px 12px;border-left:3px solid var(--bamboo);background:var(--bamboo-soft);border-radius:0 6px 6px 0;line-height:1.6}
+.sheet mark{background:var(--mark);color:inherit;padding:0 1px}
+.stats{display:flex;gap:28px;flex-wrap:wrap;margin-top:20px}
+.stats div{display:grid}
+.stats b{font-family:var(--f-num);font-size:22px;font-weight:500}
+.stats span{font-size:12.5px;color:var(--mute)}
+
+.ability{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.ability .card{display:grid;gap:6px;align-content:start}
+.ability .k{font-family:var(--f-read);font-size:20px;font-weight:600}
+.ability small{font-size:12px;color:var(--bamboo);font-family:var(--f-num)}
+.loop{display:grid;grid-template-columns:repeat(6,1fr);gap:0;counter-reset:s}
+.loop div{padding:14px 12px;border-top:3px solid var(--line);position:relative}
+.loop div::before{counter-increment:s;content:counter(s);font-family:var(--f-num);font-size:12px;color:var(--bamboo)}
+.loop div:nth-child(3){border-top-color:var(--bamboo)}
+.loop b{display:block;font-size:15px}
+.loop span{font-size:13px;color:var(--ink-2);display:block}
+.loop i{font-style:normal;font-family:var(--f-num);font-size:12px;color:var(--mute)}
+.roles .card{border-top:3px solid var(--bamboo)}
+.roles .card ul{margin:8px 0 0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}
+.arch{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:12px;align-items:stretch}
+.arch .col{display:grid;gap:10px;align-content:start}
+.arch .box{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:13.5px}
+.arch .box b{display:block;font-size:14px}
+.arch .core{background:var(--navy-soft);border-color:transparent}
+.arch h4{margin:0 0 2px;font-size:12px;font-family:var(--f-num);letter-spacing:.1em;color:var(--mute);font-weight:400}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:640px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--mute);font-size:12.5px;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+
+/* trainer */
+.picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:16px}
+.lesson{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px;cursor:pointer;text-align:left;display:grid;gap:6px}
+.lesson[aria-pressed="true"]{border-color:var(--bamboo);box-shadow:0 0 0 1px var(--bamboo)}
+.lesson b{font-family:var(--f-read);font-size:17px}
+.lesson .meta{display:flex;gap:6px;flex-wrap:wrap}
+.desk{display:grid;grid-template-columns:200px minmax(0,1fr);gap:22px;margin-top:22px;align-items:start}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:2px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 74px)}
+.steps li{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;color:var(--mute);font-size:14px}
+.steps li i{font-style:normal;font-family:var(--f-num);font-size:12px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line)}
+.steps li.on{background:var(--paper);color:var(--ink);font-weight:500}
+.steps li.on i{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.steps li.done{color:var(--ink-2)}
+.steps li.done i{background:var(--bamboo);border-color:var(--bamboo);color:#fff}
+.stage{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:24px clamp(16px,3vw,32px);min-width:0}
+.stage h3{font-size:19px;margin-bottom:4px}
+.stage .why{font-size:13px;color:var(--bamboo);margin-bottom:16px}
+.reading{font-family:var(--f-read);font-size:17px;line-height:2.05;max-width:38em}
+.reading h4{font-family:var(--f-read);font-size:21px;margin:0 0 4px}
+.reading .lead{color:var(--ink-2);font-size:15px;margin-bottom:12px}
+.reading p{margin:0 0 .9em;text-indent:2em}
+.reading p .pn{font-family:var(--f-num);font-size:11px;color:var(--mute);margin-right:4px;text-indent:0}
+.reading .s{cursor:pointer;border-radius:2px;transition:background .15s}
+.reading .s:hover{background:var(--navy-soft)}
+.reading .s.hl{background:var(--mark)}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.bar .sp{margin-left:auto}
+.timer{font-family:var(--f-num);font-size:14px;color:var(--ink-2)}
+.opt{display:grid;gap:8px;margin:10px 0}
+.opt label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:14.5px}
+.opt label:has(input:checked){border-color:var(--bamboo);background:var(--bamboo-soft)}
+.opt input{margin-top:5px}
+textarea,input[type=text]{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg);line-height:1.7;resize:vertical}
+textarea{min-height:120px}
+.field{display:grid;gap:6px;margin:14px 0}
+.field>span{font-size:14px;font-weight:500}
+.field>small{font-size:12.5px;color:var(--mute)}
+.range{display:flex;gap:12px;align-items:center}
+.range input{flex:1;accent-color:var(--bamboo)}
+.range b{font-family:var(--f-num);min-width:2ch}
+.fb{border-radius:8px;padding:14px 16px;background:var(--bg);border:1px solid var(--line);font-size:14.5px;display:grid;gap:8px;margin-top:14px}
+.fb.ai{border-left:3px solid var(--bamboo)}
+.fb h5{margin:0;font-size:13px;color:var(--bamboo);font-weight:500;display:flex;gap:8px;align-items:center}
+.kp{display:grid;gap:6px;margin:4px 0;padding:0;list-style:none}
+.kp li{display:flex;gap:8px;font-size:14px}
+.kp li::before{content:"○";color:var(--mute);font-family:var(--f-num)}
+.kp li.hit::before{content:"●";color:var(--good)}
+.rows{display:grid;gap:10px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:8px}
+.row .ex{font-family:var(--f-read);font-size:14.5px;line-height:1.8}
+.row .ex b{font-family:var(--f-num);font-size:11px;color:var(--mute);font-weight:400;margin-right:6px}
+.row select{width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.row.ok{border-color:var(--good)}
+.row.no{border-color:var(--bad);background:var(--bad-soft)}
+.row .exp{grid-column:1/-1;font-size:13px;color:var(--ink-2)}
+.ai-sum{font-family:var(--f-read);font-size:16px;line-height:2;padding:14px 16px;border:1px dashed var(--line);border-radius:8px;background:var(--bg)}
+.ai-sum .tagline{font-family:var(--f-ui);font-size:12px;color:var(--mute);display:block;margin-bottom:4px}
+.score{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.score div{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:2px}
+.score b{font-family:var(--f-num);font-size:22px;font-weight:500}
+.score span{font-size:12.5px;color:var(--mute)}
+.review{display:flex;gap:10px;flex-wrap:wrap}
+.review .tag{font-size:13px;padding:4px 10px}
+.hidebox{display:grid;place-items:center;text-align:center;padding:26px;border:1px dashed var(--line);border-radius:8px;color:var(--mute);font-size:14px;margin-bottom:12px}
+.thinking{color:var(--mute);font-size:13.5px}
+.thinking::after{content:"…";animation:dots 1.2s steps(3) infinite}
+@keyframes dots{0%{content:"·"}33%{content:"··"}66%{content:"···"}}
+
+/* tutor drawer */
+.tutor-btn{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:8;border-radius:99px;padding:12px 18px;box-shadow:0 8px 24px -10px rgba(27,42,74,.5)}
+.drawer{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100vw - 32px));max-height:min(560px,70vh);background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 50px -20px rgba(27,42,74,.45);z-index:8;display:grid;grid-template-rows:auto 1fr auto}
+.drawer[hidden]{display:none}
+.drawer header{padding:12px 16px;border-bottom:1px solid var(--line)}
+.drawer header b{display:block;font-size:15px}
+.drawer header small{font-size:12px;color:var(--mute)}
+.chat{overflow-y:auto;padding:12px 14px;display:grid;gap:10px;align-content:start}
+.msg{padding:9px 12px;border-radius:10px;font-size:14px;max-width:88%;white-space:pre-wrap}
+.msg.u{justify-self:end;background:var(--ink);color:var(--paper)}
+.msg.a{background:var(--bg);border:1px solid var(--line)}
+.drawer form{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.drawer form input{flex:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 8px}
+.chips button{font-size:12.5px;border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:3px 10px;cursor:pointer}
+
+/* library / report / teacher */
+.tree{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tree .card{display:grid;gap:8px;align-content:start}
+.tree ol{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}
+.lib{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.lib .card{display:grid;gap:8px;align-content:start}
+.lib .card b{font-family:var(--f-read);font-size:16px}
+.lib .meta{display:flex;gap:6px;flex-wrap:wrap}
+.lib .card .go{justify-self:start;font-size:13px;padding:5px 12px}
+.filter{display:flex;gap:6px;flex-wrap:wrap}
+.filter button{border:1px solid var(--line);background:var(--paper);border-radius:99px;padding:5px 12px;cursor:pointer;font-size:13.5px}
+.filter button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.sample-flag{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;color:var(--warn);border:1px solid var(--warn);border-radius:99px;padding:2px 10px}
+.skill{display:grid;grid-template-columns:120px minmax(0,1fr) 54px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.skill:last-child{border-bottom:0}
+.skill .nm{font-size:14px}
+.skill .nm small{display:block;color:var(--mute);font-size:12px}
+.weeks{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;align-items:end;height:38px}
+.weeks i{display:block;background:var(--navy-soft);border-radius:3px 3px 0 0}
+.weeks i:last-child{background:var(--bamboo)}
+.skill .v{font-family:var(--f-num);font-size:13px;text-align:right}
+.skill .v.up{color:var(--good)}
+.works{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.works .card p{font-family:var(--f-read);font-size:14.5px;line-height:1.9;color:var(--ink)}
+.calib{display:grid;gap:8px}
+.calib .r{display:grid;grid-template-columns:70px 1fr 1fr;gap:8px;align-items:center;font-size:13px}
+.calib .t{height:10px;border-radius:5px;background:var(--line);position:relative;overflow:hidden}
+.calib .t i{position:absolute;inset:0 auto 0 0;border-radius:5px}
+.err{display:grid;grid-template-columns:minmax(0,1fr) 60px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.err:last-child{border-bottom:0}
+.err .t{height:8px;border-radius:4px;background:var(--line);margin-top:6px;overflow:hidden}
+.err .t i{display:block;height:100%;background:var(--warn)}
+.err b{font-family:var(--f-num);font-weight:500;text-align:right}
+
+@media (max-width:860px){
+  .hero,.arch{grid-template-columns:1fr}
+  .desk{grid-template-columns:1fr}
+  .steps{position:static;display:flex;overflow-x:auto}
+  .steps li{flex:0 0 auto}
+  .steps li span{display:none}
+  .steps li.on span{display:inline}
+  .loop{grid-template-columns:repeat(2,1fr)}
+  .tree{grid-template-columns:repeat(2,1fr)}
+  .works{grid-template-columns:1fr}
+  .row{grid-template-columns:1fr}
+}
+@media (max-width:480px){.tree{grid-template-columns:1fr}.skill{grid-template-columns:90px minmax(0,1fr) 46px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><b>深读</b><span>DEEPREAD · 平台原型</span></div>
+    <nav class="tabs" role="tablist" aria-label="平台模块">
+      <button role="tab" id="t-overview" aria-selected="true" data-tab="overview">平台总览</button>
+      <button role="tab" id="t-train" aria-selected="false" data-tab="train">训练体验</button>
+      <button role="tab" id="t-library" aria-selected="false" data-tab="library">课程与内容库</button>
+      <button role="tab" id="t-report" aria-selected="false" data-tab="report">学习报告</button>
+      <button role="tab" id="t-teacher" aria-selected="false" data-tab="teacher">教师端</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ OVERVIEW ============ -->
+<section class="panel" id="p-overview" role="tabpanel" aria-labelledby="t-overview">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">AI 时代的深度阅读与判断力训练</div>
+      <h1>读懂原文，<br>才能<em>读懂 AI</em>。</h1>
+      <p class="lede">深读是一个面向初中到高中学生的 AI 阅读学习平台。每天一篇 400–900 字的真实短文，用 15–25 分钟完成“预测—阅读—合书回忆—结构分析—表达迁移—间隔复习”的训练。AI 只做导师，给提示、不给答案。目标是练出四件事：抓得住重点、记得住、讲得清，还能核查 AI 给出的答案。</p>
+      <div class="stats">
+        <div><b>6</b><span>项可观察的阅读能力</span></div>
+        <div><b>15–25</b><span>分钟 / 每日训练</span></div>
+        <div><b>4</b><span>种 AI 导师角色</span></div>
+        <div><b>3</b><span>端：学生 · 家长 · 教师</span></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:22px;flex-wrap:wrap">
+        <button class="btn green" data-goto="train">体验一节训练课</button>
+        <button class="btn ghost" data-goto="library">看课程体系</button>
+      </div>
+    </div>
+    <div class="sheet" aria-label="训练界面示意">
+      <div class="note" style="font-family:var(--f-ui);margin-bottom:6px">第 3 步 · 合书回忆前的阅读页</div>
+      郊区多是农田、树林和水面，植物通过蒸腾作用把水分散发到空气中，这个过程会带走热量；<mark>城市里则铺满了沥青、水泥和砖石，它们白天大量吸收太阳辐射，夜晚再慢慢把热量释放出来。</mark>
+      <div class="q"><b>AI 导师</b>　你标出了“夜晚释放热量”。想一想，这能解释热岛为什么在夜晚更明显吗？先别回看，用自己的话说说。</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="eyebrow">能力模型</div>
+    <h2>六项可观察、可练习的阅读能力</h2>
+    <p class="lede">每项能力都写成学生看得懂的行为描述，并对应 PISA 阅读框架的认知过程。平台不给“脑力总分”，只报告每项能力在具体任务上的表现。</p>
+    <div class="ability" id="abilities"></div>
+  </div>
+
+  <div class="sec">
+    <div class="eyebrow">每日训练闭环</div>
+    <h2>一节课 15–25 分钟，六步完成</h2>
+    <div class="loop">
+      <div><b>目标与预测</b><span>读标题导语，预测结构，写一个问题</span><i>1–2 分钟</i></div>
+      <div><b>专注阅读</b><span>按问题标记，记录用时与回看</span><i>4–8 分钟</i></div>
+      <div><b>合书回忆</b><span>隐藏原文，主动提取主旨与证据</span><i>3–4 分钟</i></div>
+      <div><b>结构分析</b><span>段落功能、论证要素、AI 摘要核查</span><i>3–4 分钟</i></div>
+      <div><b>表达迁移</b><span>3–5 句摘要，回答迁移题</span><i>3–5 分钟</i></div>
+      <div><b>反馈复习</b><span>一条改进建议，次日、一周后再提取</span><i>1–2 分钟</i></div>
+    </div>
+    <p class="note">第 3 步“合书回忆”是闭环的中心。主动检索和间隔复习是学习科学中证据最强的两项策略（Dunlosky 等，2013；Roediger &amp; Karpicke，2006）。</p>
+  </div>
+
+  <div class="sec roles">
+    <div class="eyebrow">AI 导师</div>
+    <h2>四种角色，同一条护栏：给提示，不给答案</h2>
+    <div class="grid g2">
+      <div class="card"><h3>阅读导师</h3><p>阅读中按需提示：这一段在全文中起什么作用？哪个词是限定条件？</p><ul><li>不提前透露主旨</li><li>回忆环节只给线索词，不复述原文</li></ul></div>
+      <div class="card"><h3>回忆教练</h3><p>对照关键点评价学生的回忆，指出遗漏和误解，安排次日与一周后的再提取。</p><ul><li>先肯定，再指出一处，最后给下一步</li><li>反馈引用原文段落作为依据</li></ul></div>
+      <div class="card"><h3>论证对练</h3><p>扮演持不同意见的同学，追问“依据在哪”“有没有反例”，帮助学生把理由和证据讲完整。</p><ul><li>只追问，不替学生写论证</li><li>识别以偏概全、相关当因果等常见错误</li></ul></div>
+      <div class="card"><h3>核查陪练</h3><p>故意给出带错误的 AI 摘要，让学生对照原文核查夸大、数字错误和编造内容。</p><ul><li>每个错误都能在原文中找到依据</li><li>训练“读完原文再信 AI”的习惯</li></ul></div>
+    </div>
+    <p class="note">护栏依据：Bastani 等（PNAS，2025）发现，直接给答案的 AI 让练习成绩提高 48%，考试成绩却下降 17%；只给提示的版本没有这一副作用。教育部 2025 年中小学生成式 AI 使用指南也要求学生不得照抄 AI 作答，小学段不得独自使用开放式生成。</p>
+  </div>
+
+  <div class="sec">
+    <div class="eyebrow">平台架构</div>
+    <h2>三端应用 · 四个引擎 · 一个学习者模型</h2>
+    <div class="arch">
+      <div class="col"><h4>使用端</h4>
+        <div class="box"><b>学生端</b>每日训练、AI 导师、复习提醒、个人作品集</div>
+        <div class="box"><b>家长端</b>每周作品样例、练习稳定性、一个陪练问题</div>
+        <div class="box"><b>教师端</b>布置任务、班级共性错误、分组建议</div>
+      </div>
+      <div class="col"><h4>平台核心</h4>
+        <div class="box core"><b>内容引擎</b>文本库（主题、年级、字数、结构、难度多指标）＋ 内容卡片 ＋ 人工审核流</div>
+        <div class="box core"><b>测评引擎</b>规则评分（定位、选择）＋ 关键点匹配（回忆）＋ 量表评分（摘要、迁移）＋ 人工抽检</div>
+        <div class="box core"><b>AI 导师引擎</b>多模型路由：小模型做初筛与提示，大模型只处理开放表达和申诉；角色提示词与护栏</div>
+        <div class="box core"><b>复习调度</b>按遗忘风险安排次日、一周后再提取，间隔随数据优化</div>
+      </div>
+      <div class="col"><h4>数据与合规</h4>
+        <div class="box"><b>学习者模型</b>六项能力 × 文本类型的掌握度、信心校准、常见错误</div>
+        <div class="box"><b>报告服务</b>行为化描述 ＋ 作品证据，不出排行榜</div>
+        <div class="box"><b>合规层</b>监护人同意、数据最小化、删除机制、AI 内容标识与审核</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="eyebrow">学段路径</div>
+    <h2>首期聚焦初中，按学段逐步延伸</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>学段</th><th>主要文本</th><th>训练重点</th><th>AI 使用方式</th><th>阶段</th></tr></thead>
+      <tbody>
+        <tr><td>小学高年级</td><td>童话、科普短文、说明书</td><td>信息定位、段落大意、合书复述</td><td>关闭开放式生成，只用受控提示与语音复述</td><td><span class="tag">第二期</span></td></tr>
+        <tr><td>初中</td><td>说明文、议论文、新闻、历史材料</td><td>结构、因果、论证要素、AI 摘要核查</td><td>导师提示、回忆反馈、论证追问</td><td><span class="tag g">首期 MVP</span></td></tr>
+        <tr><td>高中</td><td>学术短论、多源材料、整本书章节</td><td>多源比较、可信度评价、长文结构</td><td>论证对练、多源核查</td><td><span class="tag">第二期</span></td></tr>
+        <tr><td>大学 / 职场</td><td>论文、行业报告、政策文件</td><td>快速抓结构、证据评估、简报写作</td><td>自带材料、AI 输出核查</td><td><span class="tag">第三期</span></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ TRAIN ============ -->
+<section class="panel" id="p-train" role="tabpanel" aria-labelledby="t-train" hidden>
+  <div class="eyebrow">训练体验</div>
+  <h2 style="font-size:24px;margin-top:6px">选一节示范课，完整走一遍训练闭环</h2>
+  <p class="lede" style="margin-top:6px">三节课分别对应说明文、议论文和 AI 摘要核查。课文是平台编辑原创的教学材料。<span id="aiState" class="note"></span></p>
+  <div class="picker" id="picker"></div>
+  <div class="desk">
+    <ol class="steps" id="steps"></ol>
+    <div class="stage" id="stage"></div>
+  </div>
+</section>
+
+<!-- ============ LIBRARY ============ -->
+<section class="panel" id="p-library" role="tabpanel" aria-labelledby="t-library" hidden>
+  <div class="eyebrow">课程体系</div>
+  <h2 style="font-size:24px;margin-top:6px">四个阶段的技能树</h2>
+  <p class="lede" style="margin-top:6px">每个阶段 6–8 周，按“初阶任务 → 进阶任务”推进。每周一次综合任务，让学生自己判断该用哪种策略。</p>
+  <div class="tree" id="tree" style="margin-top:16px"></div>
+
+  <div class="sec">
+    <div class="eyebrow">典型内容</div>
+    <h2>内容库示例：12 节典型课</h2>
+    <div class="filter" id="libFilter"></div>
+    <div class="lib" id="lib"></div>
+  </div>
+
+  <div class="sec">
+    <div class="eyebrow">一周课表示例 · 初二上学期 · 第二阶段第 3 周</div>
+    <h2>主题交错，每周五做综合任务</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>周一</th><th>周二</th><th>周三</th><th>周四</th><th>周五</th><th>周末</th></tr></thead>
+      <tbody><tr>
+        <td><b>说明文 · 因果</b><br>城市为什么会“发烧”<br><span class="note">合书回忆 + 因果链</span></td>
+        <td><b>新闻 · 来源</b><br>一场暴雨的三篇报道<br><span class="note">比较信息来源</span></td>
+        <td><b>议论文 · 论证</b><br>刷短视频会让人变笨吗<br><span class="note">论证要素 + 推理错误</span></td>
+        <td><b>历史材料 · 时间</b><br>郑和下西洋的两份记载<br><span class="note">时间顺序 + 立场</span></td>
+        <td><b>综合 · AI 核查</b><br>午睡能让记忆更好吗<br><span class="note">核查 AI 摘要</span></td>
+        <td><b>间隔复习</b><br>周一、周三两篇再提取<br><span class="note">5 分钟</span></td>
+      </tr></tbody>
+    </table></div>
+  </div>
+
+  <div class="sec">
+    <div class="eyebrow">内容卡片</div>
+    <h2>每篇材料都有一张经编辑审核的内容卡片</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th style="width:150px">字段</th><th>示例：《城市为什么会“发烧”？》</th></tr></thead>
+      <tbody>
+        <tr><td>来源与授权</td><td>平台编辑原创，可商用</td></tr>
+        <tr><td>年级 · 字数 · 文体</td><td>初二 · 约 510 字 · 说明文</td></tr>
+        <tr><td>结构类型</td><td>现象 / 定义 → 原因（三条）→ 影响 → 对策</td></tr>
+        <tr><td>关键概念</td><td>城市热岛效应、蒸腾作用、太阳辐射、通风廊道</td></tr>
+        <tr><td>主旨句位置</td><td>第 1 段（定义）＋ 第 6 段（对策）</td></tr>
+        <tr><td>关键点（回忆评分）</td><td>定义；地表改变；城市形态；人类活动排热与循环；三类影响；四项对策</td></tr>
+        <tr><td>常见误读</td><td>把“夜晚更明显”误解为夜晚更热；把空调循环当成唯一原因</td></tr>
+        <tr><td>先备知识</td><td>蒸发吸热（物理八年级上）</td></tr>
+        <tr><td>训练目标</td><td>段落功能、因果推断、迁移应用</td></tr>
+        <tr><td>审核记录</td><td>事实核查 ✓ · 年龄适配 ✓ · 题目有原文依据 ✓ · 版本 v1.2</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ REPORT ============ -->
+<section class="panel" id="p-report" role="tabpanel" aria-labelledby="t-report" hidden>
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div class="eyebrow">学习报告 · 第 4 周</div><span class="sample-flag">示例数据，用于展示报告形式</span>
+  </div>
+  <h2 style="font-size:24px;margin-top:6px">林同学 · 初二 · 已完成 13 节训练</h2>
+  <p class="lede" style="margin-top:6px">本周在“合书回忆”上进步最明显：4 篇材料中有 3 篇能说出主旨和两个以上支持理由。下周建议多练“证据判断”，它是目前最需要加强的一项。</p>
+
+  <div class="grid g2" style="margin-top:22px;align-items:start">
+    <div class="card">
+      <h3>六项能力 · 近四周</h3>
+      <p class="note" style="margin-bottom:6px">数值为该项任务的平均达标率；绿色柱为本周</p>
+      <div id="skills"></div>
+    </div>
+    <div class="grid" style="gap:14px">
+      <div class="card">
+        <h3>信心与实际表现</h3>
+        <p class="note">读完后先自评“读懂了多少”，再与回忆覆盖率比较</p>
+        <div class="calib" id="calib" style="margin-top:10px"></div>
+        <p style="margin-top:10px;font-size:13.5px">议论文上自评偏高，常漏掉文中的限定条件。下周的议论文任务会加一步“圈出限定词”。</p>
+      </div>
+      <div class="card">
+        <h3>给家长的一个陪练问题</h3>
+        <p>晚饭时问孩子：“今天读的那篇文章，作者最想让读者相信什么？他拿出了什么证据？”听孩子讲完，不纠正，只追问一句“还有别的可能吗？”</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2 style="font-size:19px">作品对比：同一类说明文的摘要</h2>
+    <div class="works">
+      <div class="card"><span class="tag">第 1 周 · 量表 2 / 6</span><p style="margin-top:8px">文章讲了很多关于冰川的知识，冰川在融化，很多地方都受到影响，我们要保护环境。</p><p class="note" style="font-family:var(--f-ui)">主旨模糊，没有因果关系，结尾套用了口号。</p></div>
+      <div class="card"><span class="tag g">第 4 周 · 量表 5 / 6</span><p style="margin-top:8px">城市热岛是指城区比郊区更热的现象。主要原因有三：硬质地面白天吸热、夜晚放热；高楼挡风并反复反射阳光；空调和汽车直接排热，还会形成循环。增加绿地、使用浅色材料和保留通风廊道可以减轻它的影响。</p><p class="note" style="font-family:var(--f-ui)">主旨与三条原因准确，因果清楚；可以补充一项影响。</p></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2 style="font-size:19px">复习计划</h2>
+    <div class="review">
+      <span class="tag o">明天 07:30 · 再提取《城市为什么会“发烧”》三个原因</span>
+      <span class="tag">周六 · 再提取《刷短视频会让人变笨吗》的主张与两条理由</span>
+      <span class="tag">下周二 · 第 2 周三篇材料混合回忆</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TEACHER ============ -->
+<section class="panel" id="p-teacher" role="tabpanel" aria-labelledby="t-teacher" hidden>
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div class="eyebrow">教师端 · 初二（3）班</div><span class="sample-flag">示例数据，用于展示教师端形式</span>
+  </div>
+  <h2 style="font-size:24px;margin-top:6px">本周布置：《刷短视频会让人变笨吗？》</h2>
+  <p class="lede" style="margin-top:6px">42 人中 38 人完成，平均用时 19 分钟。系统汇总了全班的共性错误，并给出下一节课的讲解建议，老师不用逐份批改。</p>
+  <div class="grid g2" style="margin-top:20px;align-items:start">
+    <div class="card">
+      <h3>共性错误（按人数比例）</h3>
+      <div id="errs" style="margin-top:6px"></div>
+    </div>
+    <div class="grid" style="gap:14px">
+      <div class="card">
+        <h3>下一节课建议（10 分钟）</h3>
+        <p>投影第 4 段“表哥”的例子，请学生说出它为什么不能证明结论；再换成“用平板的同学成绩更好”，让学生用同样的方法评价。</p>
+      </div>
+      <div class="card">
+        <h3>分组练习推荐</h3>
+        <p><b>A 组 · 14 人</b>　能找主张，找不到证据：推送“证据定位”短练习 3 篇</p>
+        <p style="margin-top:6px"><b>B 组 · 17 人</b>　论证要素齐全，推理错误识别弱：推送“相关不等于因果”练习</p>
+        <p style="margin-top:6px"><b>C 组 · 7 人</b>　全部达标：推送双文本对比阅读</p>
+      </div>
+      <div class="card">
+        <h3>需要关注 · 3 人</h3>
+        <p>回忆覆盖率连续两周低于 30%，且阅读用时明显偏短。建议面谈了解是材料太难还是赶时间。</p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<button class="btn green tutor-btn" id="tutorBtn" hidden>问 AI 导师</button>
+<div class="drawer" id="drawer" hidden role="dialog" aria-label="AI 阅读导师">
+  <header><b>AI 阅读导师</b><small id="tutorCtx">给提示，不给答案</small></header>
+  <div>
+    <div class="chat" id="chat"></div>
+    <div class="chips" id="chips"></div>
+  </div>
+  <form id="chatForm"><input type="text" id="chatIn" placeholder="卡在哪里了？说说看" autocomplete="off"><button class="btn" id="chatSend">发送</button></form>
+</div>
+
+<script>
+/* ---------- data ---------- */
+const ABILITIES=[
+ {k:'专注',d:'能不被打断地读完一篇 600 字材料，读后知道自己有没有走神',p:'阅读流畅性'},
+ {k:'回忆',d:'合上原文后，能说出主旨和至少两个支持理由；一周后仍记得',p:'定位信息'},
+ {k:'理解',d:'能说清段落之间的关系和文中的因果链',p:'理解 · 整合推理'},
+ {k:'分析',d:'能区分主张、理由、证据和限定条件，识别常见推理错误',p:'评价与反思'},
+ {k:'核查',d:'能对照原文发现 AI 摘要中的夸大、数字错误和编造',p:'多源 · 可信度'},
+ {k:'表达',d:'能用 3–5 句话写出准确摘要，并把方法用到新例子上',p:'理解 · 反思'}];
+
+const LESSONS={
+ heat:{id:'heat',title:'城市为什么会“发烧”？',type:'说明文',grade:'初二',skill:'因果推断',ai:'阅读导师',
+  lead:'夏天的傍晚，从郊外开车进城，常常能感到温度一下子升高了好几度。',
+  paras:[
+   '气象学家把城市气温明显高于周边郊区的现象，称为“城市热岛效应”。在许多大城市，城区与郊区的气温差在晴朗无风的夜晚最为明显，常常有两三摄氏度，个别时候更高。',
+   '热岛的第一个成因是地表的改变。郊区多是农田、树林和水面，植物通过蒸腾作用把水分散发到空气中，这个过程会带走热量。城市里则铺满了沥青、水泥和砖石，它们白天大量吸收太阳辐射，夜晚再慢慢把热量释放出来。',
+   '第二个成因是城市的形态。高楼林立的街道像一条条“峡谷”，阳光在墙面之间多次反射，热量不容易散失。建筑物还会挡住风，使热空气难以被吹走。',
+   '第三个成因是人类活动本身。空调、汽车和工厂都在不断向空气中排放热量。值得注意的是，空调开得越多，室外就越热；而室外越热，人们又越依赖空调，形成一种相互加强的循环。',
+   '热岛效应并不只是让人觉得闷热。它会增加城市的用电负荷，加重高温天气对老人和户外劳动者的健康威胁，还可能影响局部地区的降雨。',
+   '怎样给城市“退烧”？一些城市开始增加公园绿地和水体，在屋顶种植植物，使用浅色、反射率高的建筑材料，并在规划时保留“通风廊道”，让郊外的凉风能吹进城区。这些办法未必能消除热岛，但可以明显减轻它的影响。'],
+  predict:{q:'只看标题和导语，你猜这篇文章会怎样展开？',opts:['讲一个人的夏日经历，再写感想','先说明是什么现象，再讲原因、影响和办法','先提出一个观点，再反驳别人的看法'],a:1,
+   why:'标题是一个“为什么”的问题，导语描述了一个现象，说明文常按“现象—原因—影响—对策”展开。'},
+  kps:[
+   {t:'热岛效应的含义：城区气温明显高于郊区',kw:['郊区','热岛','高于','比郊区','城区']},
+   {t:'原因一：地表改变（沥青水泥吸热、缺少植物蒸腾）',kw:['沥青','水泥','地面','地表','蒸腾','植物','吸热','吸收']},
+   {t:'原因二：城市形态（高楼反射阳光、挡住风）',kw:['高楼','楼','反射','挡风','挡住','峡谷','风']},
+   {t:'原因三：人类活动排热，空调形成循环',kw:['空调','汽车','工厂','排放','排热','循环','人类活动']},
+   {t:'影响：用电增加、危害健康、影响降雨',kw:['用电','健康','降雨','老人','负荷','影响']},
+   {t:'对策：绿地水体、屋顶绿化、浅色材料、通风廊道',kw:['绿地','公园','水体','屋顶','浅色','通风','廊道','退烧','对策']}],
+  analysis:{kind:'roles',intro:'给每一段标出它在全文中的作用。',roles:['提出现象 / 下定义','解释原因','说明影响','提出对策'],
+   items:[{p:0,a:0},{p:1,a:1},{p:2,a:1},{p:3,a:1},{p:4,a:2},{p:5,a:3}],
+   mcq:{q:'为什么热岛效应在夜晚最明显？',opts:['夜晚人们开空调更多','沥青、水泥白天吸收的热量在夜晚慢慢释放，而郊区降温更快','夜晚风更大，把郊区的热量吹进了城市','夜晚没有阳光，所以城市更热'],a:1,
+    why:'第 2 段说沥青水泥“白天大量吸收太阳辐射，夜晚再慢慢把热量释放出来”。这一步需要把第 1 段和第 2 段联系起来推理，原文没有直接写出答案。'}},
+  transfer:'学校想在操场旁修一个停车场，有同学建议用“草坪砖”（砖缝里长草）代替整片水泥地。请用文中的道理说明这个建议的理由。',
+  refSummary:'城市热岛效应指城区气温明显高于郊区的现象。它主要由三方面造成：硬质地面白天吸热、夜晚放热，又缺少植物蒸腾降温；高楼反射阳光并阻挡通风；空调、汽车等人类活动直接排热并形成循环。热岛会增加用电、威胁健康，增加绿地水体、使用浅色材料和保留通风廊道可以减轻它的影响。'},
+
+ video:{id:'video',title:'刷短视频会让人变笨吗？',type:'议论文',grade:'初三',skill:'论证分析',ai:'论证对练',
+  lead:'一篇学生习作，围绕网上流行的一种说法展开讨论。',
+  paras:[
+   '最近，“短视频让人变笨”的说法在网上流传很广。这种说法有道理吗？我认为，短视频本身不会让人变笨，但长时间、无节制地刷短视频，确实可能削弱我们深度阅读和持续专注的能力。',
+   '首先，短视频的设计决定了它擅长抓住注意力。几秒钟一个画面切换，不喜欢就划走。大脑习惯了这种不断出现的新刺激，再面对需要静下心来读的长文章，就容易觉得枯燥、坐不住。',
+   '其次，专注是一种需要练习的能力。就像长期不跑步的人很难一下子跑完三千米，长期只接触碎片信息的人，读长文时也更容易走神。心理学研究发现，人们在阅读时本来就经常走神，而且常常意识不到自己走神了。',
+   '有人举例说：“我表哥每天刷五个小时短视频，期末成绩下降了二十分，可见短视频让人变笨。”这个例子并不能证明结论。成绩下降可能还有别的原因，比如作息不规律、学习内容变难；而且一个人的经历，也不能代表所有人。',
+   '当然，短视频也有它的价值。一些科普和新闻短视频能帮助我们快速了解新知识，激发进一步阅读的兴趣。关键不在于用不用，而在于怎么用、用多久。',
+   '所以，与其担心“变笨”，不如给自己定一个规矩：每天留出一段不看手机的时间，读完一篇完整的文章，再用自己的话把它讲给别人听。'],
+  predict:{q:'标题是一个问句。你预测作者会怎样回答？',opts:['完全同意：短视频一定让人变笨','有条件地回答：取决于怎么用、用多久','不回答，只介绍短视频的发展历史'],a:1,
+   why:'议论文的标题用问句，往往是为了引出作者的辨析。导语说“围绕一种说法展开讨论”，提示作者会有自己的判断，而不是简单照搬。'},
+  kps:[
+   {t:'主张：短视频本身不会让人变笨，但无节制使用会削弱专注和深度阅读',kw:['无节制','长时间','专注','深度阅读','不会让人变笨','本身']},
+   {t:'理由一：短视频设计抓注意力，习惯快刺激后读长文坐不住',kw:['切换','划走','刺激','抓住注意力','坐不住','枯燥','设计']},
+   {t:'理由二：专注需要练习，碎片信息让人更易走神',kw:['练习','跑步','碎片','走神']},
+   {t:'反驳：“表哥”的个例不能证明结论',kw:['表哥','例子','个例','一个人','其他原因','别的原因','不能证明','不能代表']},
+   {t:'让步：短视频也有价值，关键在怎么用、用多久',kw:['价值','科普','怎么用','用多久','也有']},
+   {t:'建议：每天留出时间读完整文章并讲给别人听',kw:['规矩','不看手机','完整','讲给','建议']}],
+  analysis:{kind:'roles',intro:'议论文的每一段都在论证里承担一个角色。给每段选一个最合适的。',roles:['提出主张','给出理由','给出理由并引用证据','反驳不当的论证','让步与限定','结论与建议'],
+   items:[{p:0,a:0},{p:1,a:1},{p:2,a:2},{p:3,a:3},{p:4,a:4},{p:5,a:5}],
+   mcq:{q:'第 4 段中“表哥”的例子，主要犯了哪两种推理错误？',opts:['以偏概全，并把同时发生的事当成因果','偷换概念，并诉诸权威','循环论证，并攻击个人','没有错误，这个例子很有说服力'],a:0,
+    why:'一个人的经历不能代表所有人，这是以偏概全。成绩下降和刷短视频同时发生，不等于一个导致另一个，还可能有作息、学习内容变难等原因。'}},
+  transfer:'有同学说：“我们班用平板上课的同学成绩更好，所以平板能提高成绩。”请用这篇文章里的方法评价这个说法。',
+  refSummary:'作者认为，短视频本身不会让人变笨，但长时间、无节制地刷，会削弱深度阅读和专注能力。理由有两条：短视频的快速刺激让人难以静心读长文；专注需要练习，碎片信息会让人更易走神。作者也指出，用个人经历证明“变笨”并不成立，短视频也有价值，关键在怎么用、用多久，并建议每天留时间完整读一篇文章并讲给别人听。'},
+
+ nap:{id:'nap',title:'午睡能让记忆更好吗？',type:'AI 摘要核查',grade:'初二',skill:'信息核查',ai:'核查陪练',
+  lead:'一篇班级科学小实验的记录。读完后，你要检查一段由 AI 生成的摘要。',
+  paras:[
+   '初二（3）班的同学在生物老师指导下，做了一个为期两周的小实验。全班 40 人自愿分成两组：一组每天午饭后睡 20 分钟，另一组照常在教室自习。',
+   '每天上午，两组同学都背诵同一份 20 个生词的词表；下午第一节课前，再默写这些生词。',
+   '两周后统计发现，午睡组平均每次能默写出 15.2 个词，自习组平均为 13.8 个词。',
+   '老师提醒大家，这个结果只能说明在本次实验中午睡组表现稍好。由于人数较少，分组是自愿而不是随机的，愿意午睡的同学可能本来就作息更规律，因此还不能得出“午睡一定能提高记忆力”的结论。',
+   '同学们决定下学期扩大实验：邀请其他班级参加，并用抽签的方式分组。'],
+  predict:{q:'这是一篇实验记录。你预测读完后最需要弄清楚的是什么？',opts:['实验怎么做、结果是什么、结论能下到什么程度','实验的同学都叫什么名字','午睡的最佳姿势'],a:0,
+   why:'读实验类材料，关键是方法、数据和结论的边界。AI 摘要最容易出错的，往往就是把结论说过头。'},
+  kps:[
+   {t:'实验设计：40 人自愿分为午睡组和自习组，为期两周',kw:['两组','40','自愿','两周','午睡组','自习组','分成']},
+   {t:'测量方法：上午背 20 个生词，下午默写',kw:['生词','默写','背诵','20 个','词表']},
+   {t:'结果：午睡组 15.2 个，自习组 13.8 个',kw:['15.2','13.8','稍好','多一点','更多']},
+   {t:'局限：人数少、非随机分组，不能下“一定提高”的结论',kw:['人数','随机','自愿','不能得出','不能','局限','作息']},
+   {t:'后续：下学期扩大实验并抽签分组',kw:['扩大','下学期','抽签','其他班级']}],
+  analysis:{kind:'audit',intro:'下面是某个 AI 工具对这篇文章的摘要。逐句对照原文，判断每一句是否准确。',
+   sum:'由 AI 生成的摘要',
+   clauses:[
+    {t:'初二（3）班做了一个为期两周的实验，分为午睡组和自习组。',a:0,why:'与第 1 段一致。'},
+    {t:'实验证明，午睡可以显著提高记忆力。',a:1,why:'第 4 段明确说“还不能得出午睡一定能提高记忆力的结论”，“证明”“显著”都把结论说过头了。'},
+    {t:'午睡组的默写成绩比自习组高出近 30%。',a:2,why:'（15.2 − 13.8）÷ 13.8 ≈ 10%，不是 30%。'},
+    {t:'由于实验设计严谨，结果非常可靠。',a:3,why:'第 4 段说人数较少、分组自愿而非随机，原文的意思恰恰相反。'},
+    {t:'学校因此计划要求全体学生每天午睡。',a:4,why:'原文只说同学们决定下学期扩大实验，没有提到学校的任何要求，这是编造的。'}],
+   types:['准确','夸大结论','数字错误','与原文矛盾','原文没有（编造）']},
+  transfer:'请把这段 AI 摘要改写成一段准确的摘要（3–4 句），要写出实验方法、结果和结论的边界。',
+  refSummary:'初二（3）班 40 名同学自愿分为午睡组和自习组，进行了两周实验：上午背 20 个生词，下午默写。结果午睡组平均默写 15.2 个，自习组 13.8 个，午睡组稍好。但由于人数少、分组不是随机的，还不能得出午睡一定能提高记忆力的结论，同学们计划下学期扩大实验并抽签分组。'}
+};
+
+const LIB=[
+ {t:'城市为什么会“发烧”？',type:'说明文',g:'初二',s:'因果推断',w:620,ai:'阅读导师',live:'heat'},
+ {t:'刷短视频会让人变笨吗？',type:'议论文',g:'初三',s:'论证分析',w:640,ai:'论证对练',live:'video'},
+ {t:'午睡能让记忆更好吗？',type:'AI 核查',g:'初二',s:'信息核查',w:380,ai:'核查陪练',live:'nap'},
+ {t:'一场暴雨的三篇报道',type:'新闻',g:'初二',s:'多源比较',w:900,ai:'核查陪练'},
+ {t:'郑和下西洋的两份记载',type:'历史材料',g:'初二',s:'时间与立场',w:760,ai:'论证对练'},
+ {t:'蜜蜂怎样告诉同伴花在哪里',type:'科普',g:'初一',s:'信息定位',w:520,ai:'阅读导师'},
+ {t:'读懂一张城市用水折线图',type:'图表阅读',g:'初一',s:'图文整合',w:300,ai:'阅读导师'},
+ {t:'《背影》中的四次流泪',type:'文学',g:'初二',s:'细节与情感',w:850,ai:'阅读导师'},
+ {t:'《论语》十二章选读',type:'古诗文',g:'初一',s:'语素与句意',w:280,ai:'阅读导师'},
+ {t:'人工智能会取代翻译吗？两种观点',type:'议论文',g:'初三',s:'观点比较',w:880,ai:'论证对练'},
+ {t:'一则保健品广告的说法核查',type:'AI 核查',g:'初三',s:'可信度评价',w:420,ai:'核查陪练'},
+ {t:'电动车电池说明书里的安全提示',type:'实用文',g:'初一',s:'信息定位',w:450,ai:'阅读导师'}];
+
+const TREE=[
+ {n:'第一阶段',h:'抓主旨与段落功能',k:['信息定位','段落大意','主旨句识别','段落功能标注'],o:'能说出“这一段在全文中干什么”'},
+ {n:'第二阶段',h:'合书回忆与概念关系',k:['合书回忆','概念关联','因果链','次日再提取'],o:'合上原文仍能讲出主旨与两条理由'},
+ {n:'第三阶段',h:'结论、证据与假设',k:['论证要素','限定条件','推理错误识别','AI 摘要核查'],o:'能指出一个论证哪里站不住'},
+ {n:'第四阶段',h:'摘要、反驳与跨文迁移',k:['3–5 句摘要','多源比较','反驳写作','跨学科迁移'],o:'能把方法用到新材料和别的学科'}];
+
+const SKILLS=[['专注','连续阅读完成率',[62,66,71,74]],['回忆','合书回忆覆盖率',[38,46,55,68]],['理解','因果与结构题',[58,61,63,70]],['分析','论证要素识别',[41,45,47,52]],['核查','AI 摘要找错率',[30,42,48,57]],['表达','摘要量表得分率',[33,45,52,61]]];
+const CALIB=[['说明文',72,68],['议论文',80,52],['新闻',64,60]];
+const ERRS=[['把“表哥”的例子当成有效证据',41],['找不到第 3 段中的研究证据',36],['把第 5 段（让步）当成作者主张',29],['摘要照抄原句，超过 5 句',24],['迁移题只说“不能证明”，没说明原因',45]];
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const el=(tag,attrs={},...kids)=>{const e=document.createElement(tag);for(const [k,v] of Object.entries(attrs)){if(k==='class')e.className=v;else if(k==='html')e.innerHTML=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else e.setAttribute(k,v)}for(const k of kids.flat()){if(k==null)continue;e.append(k.nodeType?k:document.createTextNode(k))}return e};
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const charCount=l=>l.paras.join('').replace(/\s/g,'').length + l.lead.length;
+
+/* ---------- tabs ---------- */
+function showTab(name){
+  document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===name)));
+  document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!=='p-'+name);
+  $('#tutorBtn').hidden = name!=='train' || !sample;
+  if(name!=='train') $('#drawer').hidden=true;
+  store.set('dr-tab',name);
+  window.scrollTo({top:0});
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+document.addEventListener('click',e=>{const g=e.target.closest('[data-goto]');if(g)showTab(g.dataset.goto)});
+
+/* ---------- overview fill ---------- */
+$('#abilities').append(...ABILITIES.map(a=>el('div',{class:'card'},el('span',{class:'k'},a.k),el('p',{},a.d),el('small',{},'PISA · '+a.p))));
+
+/* ---------- library ---------- */
+$('#tree').append(...TREE.map(t=>el('div',{class:'card'},el('span',{class:'eyebrow'},t.n),el('h3',{},t.h),el('ol',{},...t.k.map(k=>el('li',{},k))),el('p',{class:'note'},'阶段目标：'+t.o))));
+const types=['全部',...new Set(LIB.map(l=>l.type))];
+let libType='全部';
+function renderLib(){
+  $('#libFilter').replaceChildren(...types.map(t=>el('button',{'aria-pressed':String(t===libType),onclick:()=>{libType=t;renderLib()}},t)));
+  $('#lib').replaceChildren(...LIB.filter(l=>libType==='全部'||l.type===libType).map(l=>el('div',{class:'card'},
+    el('div',{class:'meta'},el('span',{class:'tag'},l.type),el('span',{class:'tag'},l.g),l.live?el('span',{class:'tag g'},'可体验'):null),
+    el('b',{},l.t),
+    el('p',{class:'note'},`训练重点：${l.s} · 约 ${l.live?charCount(LESSONS[l.live]):l.w} 字 · ${l.ai}`),
+    l.live?el('button',{class:'btn ghost go',onclick:()=>{pick(l.live);showTab('train')}},'开始这节课'):null)));
+}
+renderLib();
+
+/* ---------- report / teacher ---------- */
+$('#skills').append(...SKILLS.map(([n,d,w])=>{const mx=100;return el('div',{class:'skill'},
+  el('div',{class:'nm'},n,el('small',{},d)),
+  el('div',{class:'weeks','aria-label':`${n} 近四周 ${w.join('、')}%`},...w.map(v=>el('i',{style:`height:${v/mx*100}%`}))),
+  el('div',{class:'v'+(w[3]-w[0]>=10?' up':'')},w[3]+'%'))}));
+$('#calib').append(el('div',{class:'r note'},el('span'),el('span',{},'自评读懂'),el('span',{},'实际回忆覆盖')),
+  ...CALIB.map(([n,a,b])=>el('div',{class:'r'},el('span',{},n),el('div',{class:'t'},el('i',{style:`width:${a}%;background:var(--gold)`})),el('div',{class:'t'},el('i',{style:`width:${b}%;background:var(--bamboo)`})))));
+$('#errs').append(...ERRS.map(([t,v])=>el('div',{class:'err'},el('div',{},t,el('div',{class:'t'},el('i',{style:`width:${v}%`}))),el('b',{},v+'%'))));
+
+/* ---------- AI (sample capability) ---------- */
+let sample=null;
+(async()=>{try{sample=window.claude?await window.claude.use('sample'):null}catch(e){sample=null}
+  $('#aiState').textContent = sample ? '　AI 导师已接入，反馈由 Claude 实时生成。' : '　当前环境未接入 AI，反馈使用平台内置的关键点评分。';
+  $('#tutorBtn').hidden = !(sample && !$('#p-train').hidden);
+})();
+function aiErr(e){const c=e&&e.code;if(c==='not_granted'||c==='sampling_disabled'||c==='not_declared'||c==='capability_disabled'){sample=null;$('#tutorBtn').hidden=true;$('#drawer').hidden=true;return 'AI 导师未获授权，已改用内置评分。'}
+  if(c==='rate_limited')return 'AI 导师有点忙，请稍后再试。';return 'AI 反馈暂时没有返回，可以再试一次，或先参考下面的内置评分。'}
+
+/* ---------- trainer ---------- */
+const STEPS=['目标与预测','专注阅读','合书回忆','结构分析','表达迁移','反馈复习'];
+let L=null, st=null;
+function newState(){return {step:0,pred:null,question:'',hl:new Set(),t0:0,secs:0,conf:3,recall:'',recallFb:null,recallHits:[],analysis:{},mcq:null,checked:false,summary:'',transfer:'',sumFb:null}}
+function pick(id){L=LESSONS[id];st=newState();store.set('dr-lesson',id);renderPicker();render()}
+function renderPicker(){
+  $('#picker').replaceChildren(...Object.values(LESSONS).map(l=>el('button',{class:'lesson','aria-pressed':String(L&&L.id===l.id),onclick:()=>pick(l.id)},
+    el('div',{class:'meta'},el('span',{class:'tag'},l.type),el('span',{class:'tag'},l.grade),el('span',{class:'tag g'},l.ai)),
+    el('b',{},l.title),el('span',{class:'note'},`训练重点：${l.skill} · 约 ${charCount(l)} 字`))));
+}
+function renderSteps(){
+  $('#steps').replaceChildren(...STEPS.map((s,i)=>el('li',{class:i===st.step?'on':i<st.step?'done':''},el('i',{},i<st.step?'✓':String(i+1)),el('span',{},s))));
+}
+let timerInt=null;
+function go(n){st.step=n;render();$('#stage').scrollIntoView({behavior:'smooth',block:'start'})}
+function render(){
+  clearInterval(timerInt);
+  renderSteps();
+  const S=$('#stage');S.replaceChildren();
+  [s0,s1,s2,s3,s4,s5][st.step](S);
+  $('#tutorCtx').textContent=`《${L.title}》· 第 ${st.step+1} 步 ${STEPS[st.step]} · 给提示，不给答案`;
+}
+const head=(S,t,why)=>{S.append(el('h3',{},t),el('p',{class:'why'},why))};
+const bar=(S,...kids)=>S.append(el('div',{class:'bar'},...kids));
+
+function s0(S){
+  head(S,'第 1 步 · 目标与预测','读之前先预测结构、提出问题，阅读时注意力会更有方向。');
+  S.append(el('div',{class:'reading'},el('h4',{},L.title),el('p',{class:'lead',style:'text-indent:0'},L.lead)));
+  const o=el('div',{class:'opt'},...L.predict.opts.map((t,i)=>el('label',{},el('input',{type:'radio',name:'pred',value:i,...(st.pred===i?{checked:''}:{}),onchange:()=>{st.pred=i;fb.hidden=false;fb.replaceChildren(el('h5',{},st.pred===L.predict.a?'预测合理':'可以再想想'),el('p',{},L.predict.why))}}),el('span',{},t))));
+  const fb=el('div',{class:'fb',hidden:''});
+  if(st.pred!=null){fb.hidden=false;fb.append(el('h5',{},st.pred===L.predict.a?'预测合理':'可以再想想'),el('p',{},L.predict.why))}
+  const q=el('textarea',{id:'q0',style:'min-height:70px',placeholder:'例如：热岛对我们的生活有什么影响？'});q.value=st.question;q.oninput=()=>st.question=q.value;
+  S.append(el('div',{class:'field'},el('span',{},L.predict.q),o),fb,el('div',{class:'field'},el('span',{},'写下一个你读完后想弄清楚的问题'),el('small',{},'读完后系统会请你回头看看，这个问题有没有得到回答。'),q));
+  bar(S,el('span',{class:'note'},'约 1–2 分钟'),el('button',{class:'btn sp',onclick:()=>{if(st.pred==null){fb.hidden=false;fb.replaceChildren(el('p',{},'先选一个预测，再开始阅读。'));return}go(1)}},'开始阅读'));
+}
+function s1(S){
+  head(S,'第 2 步 · 专注阅读','点击句子做标记，只标与你的问题有关的内容。读完后原文会被收起。');
+  if(!st.t0)st.t0=Date.now();
+  const R=el('div',{class:'reading'},el('h4',{},L.title),el('p',{class:'lead',style:'text-indent:0'},L.lead));
+  L.paras.forEach((p,i)=>{const P=el('p',{},el('span',{class:'pn'},String(i+1)));
+    p.split(/(?<=[。！？])/).filter(Boolean).forEach((s,j)=>{const key=i+'-'+j;const sp=el('span',{class:'s'+(st.hl.has(key)?' hl':''),tabindex:'0',role:'button','aria-pressed':String(st.hl.has(key))},s);
+      const tog=()=>{st.hl.has(key)?st.hl.delete(key):st.hl.add(key);sp.classList.toggle('hl');sp.setAttribute('aria-pressed',String(st.hl.has(key)));cnt.textContent=`已标记 ${st.hl.size} 句`};
+      sp.onclick=tog;sp.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tog()}};P.append(sp)});R.append(P)});
+  S.append(R);
+  if(st.question)S.append(el('div',{class:'fb'},el('h5',{},'你的阅读问题'),el('p',{},st.question)));
+  const tm=el('span',{class:'timer'});const cnt=el('span',{class:'note'},`已标记 ${st.hl.size} 句`);
+  const tick=()=>{const s=Math.round((Date.now()-st.t0)/1000);tm.textContent=`用时 ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};tick();timerInt=setInterval(tick,1000);
+  bar(S,tm,cnt,el('button',{class:'btn sp',onclick:()=>{st.secs=Math.max(20,Math.round((Date.now()-st.t0)/1000));go(2)}},'读完了，收起原文'));
+}
+function localRecall(text){const t=text.replace(/\s/g,'');return L.kps.map((k,i)=>k.kw.some(w=>t.includes(w.replace(/\s/g,'')))?i:-1).filter(i=>i>=0)}
+function s2(S){
+  head(S,'第 3 步 · 合书回忆','先自己提取，再看反馈。这一步感觉吃力是正常的，越费力，记得越久。');
+  S.append(el('div',{class:'hidebox'},'原文已收起 · 共 '+L.paras.length+' 段 · 你标记了 '+st.hl.size+' 句'));
+  const cv=el('b',{},String(st.conf));
+  const r=el('input',{type:'range',min:'1',max:'5',value:String(st.conf),id:'conf','aria-label':'自评读懂程度'});r.oninput=()=>{st.conf=+r.value;cv.textContent=r.value};
+  const ta=el('textarea',{id:'recall',placeholder:'不看原文，写下：这篇文章主要讲什么？作者给出了哪些原因、理由或证据？能写多少写多少。'});ta.value=st.recall;ta.oninput=()=>st.recall=ta.value;
+  const out=el('div');
+  S.append(el('div',{class:'field'},el('span',{},'先估一估：你觉得自己读懂了多少？'),el('div',{class:'range'},el('span',{class:'note'},'很少'),r,el('span',{class:'note'},'全部'),cv)),
+    el('div',{class:'field'},el('span',{},'合书写下你记得的内容'),ta),out);
+  const btn=el('button',{class:'btn green',onclick:async()=>{
+    if(st.recall.trim().length<15){out.replaceChildren(el('div',{class:'fb'},el('p',{},'再多写几句吧，至少写出主旨和一个原因或理由。')));return}
+    btn.disabled=true;st.recallHits=localRecall(st.recall);
+    if(sample){out.replaceChildren(el('div',{class:'fb ai'},el('p',{class:'thinking'},'回忆教练正在对照关键点阅读你的回忆')));
+      try{const res=await sample.json(recallPrompt(),{modelTier:'quick'});
+        if(Array.isArray(res.covered))st.recallHits=res.covered.map(Number).filter(n=>n>=0&&n<L.kps.length);st.recallFb=res;}
+      catch(e){st.recallFb={err:aiErr(e)}}}
+    btn.disabled=false;showRecall(out)}},'提交回忆');
+  if(st.recallHits.length||st.recallFb)showRecall(out);
+  bar(S,el('button',{class:'btn ghost',onclick:()=>go(1)},'返回原文（会计入回看）'),btn,el('button',{class:'btn sp',onclick:()=>go(3)},'下一步：结构分析'));
+}
+function recallPrompt(){
+  return `你是初中阅读训练平台的“回忆教练”。学生刚读完一篇文章，现在在不看原文的情况下写下了回忆。请对照关键点评价。
+规则：用简体中文；语气温和、具体；先肯定一处做得好的地方，再只指出一个最重要的遗漏或误解，最后给一个下一步动作；不要把遗漏的关键点内容直接告诉学生，而是给一个线索（例如提示它在第几段、与什么有关）；不超过 120 字。
+文章标题：${L.title}
+原文：
+${L.paras.map((p,i)=>`[第${i+1}段] ${p}`).join('\n')}
+关键点（编号从 0 开始）：
+${L.kps.map((k,i)=>`${i}. ${k.t}`).join('\n')}
+学生回忆：
+${st.recall}
+只回复一个 JSON 对象：{"covered":[已覆盖的关键点编号],"misconception":"学生回忆中与原文不符的内容，没有则为空字符串","feedback":"给学生的反馈"}`;
+}
+function showRecall(out){
+  const hits=new Set(st.recallHits);const pct=Math.round(hits.size/L.kps.length*100);
+  const kids=[el('h5',{},`回忆覆盖 ${hits.size} / ${L.kps.length} 个关键点`)];
+  kids.push(el('ul',{class:'kp'},...L.kps.map((k,i)=>el('li',{class:hits.has(i)?'hit':''},hits.has(i)?k.t:'（未覆盖）提示：在第 '+(k.p??guessPara(i))+' 段附近'))));
+  const self=st.conf*20;const gap=self-pct;
+  kids.push(el('p',{style:'font-size:13.5px'},`自评读懂 ${self}% · 实际覆盖 ${pct}%。`+(gap>=30?'自评明显偏高，下次读完先试着在心里复述一遍再判断。':gap<=-30?'你比自己以为的记得更多，可以更有信心一些。':'自评和实际比较接近，判断得很准。')));
+  out.replaceChildren(el('div',{class:'fb'},...kids));
+  if(st.recallFb){const f=st.recallFb;out.append(el('div',{class:'fb ai'},el('h5',{},'AI 回忆教练'),f.err?el('p',{class:'note'},f.err):el('p',{},f.feedback||''),f.misconception?el('p',{style:'color:var(--bad);font-size:13.5px'},'需要再核对：'+f.misconception):null))}
+}
+function guessPara(i){/* map key point to paragraph roughly */const m={heat:[1,2,3,4,5,6],video:[1,2,3,4,5,6],nap:[1,2,3,4,5]};return (m[L.id]||[])[i]||1}
+
+function s3(S){
+  const A=L.analysis;
+  if(A.kind==='roles'){
+    head(S,'第 4 步 · 结构分析',A.intro);
+    const rows=el('div',{class:'rows'});
+    A.items.forEach((it,k)=>{
+      const sel=el('select',{id:'role'+k,'aria-label':`第 ${it.p+1} 段的作用`},el('option',{value:''},'选择作用…'),...A.roles.map((r,ri)=>el('option',{value:ri,...(st.analysis[k]==ri?{selected:''}:{})},r)));
+      sel.onchange=()=>{st.analysis[k]=sel.value===''?undefined:+sel.value};
+      const ex=L.paras[it.p];const row=el('div',{class:'row'},el('div',{class:'ex'},el('b',{},'第 '+(it.p+1)+' 段'),ex.slice(0,46)+'……'),sel);
+      if(st.checked){const ok=st.analysis[k]===it.a;row.classList.add(ok?'ok':'no');if(!ok)row.append(el('div',{class:'exp'},'参考：'+A.roles[it.a]))}
+      rows.append(row)});
+    S.append(rows);
+    const m=A.mcq;const mo=el('div',{class:'opt'},...m.opts.map((t,i)=>el('label',{},el('input',{type:'radio',name:'mcq',value:i,...(st.mcq===i?{checked:''}:{}),onchange:()=>st.mcq=i}),el('span',{},t))));
+    S.append(el('div',{class:'field',style:'margin-top:20px'},el('span',{},m.q),mo));
+    const res=el('div');S.append(res);
+    if(st.checked){const n=A.items.filter((it,k)=>st.analysis[k]===it.a).length;res.append(el('div',{class:'fb'},el('h5',{},`段落作用 ${n} / ${A.items.length} · 推理题${st.mcq===m.a?'正确':'需要再想想'}`),el('p',{},m.why)))}
+    bar(S,el('button',{class:'btn green',onclick:()=>{st.checked=true;render()}},'核对'),el('button',{class:'btn sp',onclick:()=>go(4)},'下一步：表达迁移'));
+  } else {
+    head(S,'第 4 步 · 核查 AI 摘要',A.intro);
+    const box=el('div',{class:'ai-sum'},el('span',{class:'tagline'},A.sum+' · 请逐句核查'),A.clauses.map(c=>c.t).join(''));
+    S.append(box);
+    const rows=el('div',{class:'rows',style:'margin-top:14px'});
+    A.clauses.forEach((c,k)=>{
+      const sel=el('select',{id:'aud'+k,'aria-label':'判断第 '+(k+1)+' 句'},el('option',{value:''},'判断这一句…'),...A.types.map((t,ti)=>el('option',{value:ti,...(st.analysis[k]==ti?{selected:''}:{})},t)));
+      sel.onchange=()=>{st.analysis[k]=sel.value===''?undefined:+sel.value};
+      const row=el('div',{class:'row'},el('div',{class:'ex'},el('b',{},'第 '+(k+1)+' 句'),c.t),sel);
+      if(st.checked){const ok=st.analysis[k]===c.a;row.classList.add(ok?'ok':'no');row.append(el('div',{class:'exp'},(ok?'✓ ':'参考：'+A.types[c.a]+'。')+c.why))}
+      rows.append(row)});
+    S.append(rows);
+    if(st.checked){const n=A.clauses.filter((c,k)=>st.analysis[k]===c.a).length;S.append(el('div',{class:'fb'},el('h5',{},`核查正确 ${n} / ${A.clauses.length}`),el('p',{},'AI 摘要最常见的三类问题：把结论说过头、算错或记错数字、补上原文没有的内容。核查时先回到原文找依据，再下判断。')))}
+    bar(S,el('button',{class:'btn ghost',onclick:()=>{showSource()}},'对照原文'),el('button',{class:'btn green',onclick:()=>{st.checked=true;render()}},'核对'),el('button',{class:'btn sp',onclick:()=>go(4)},'下一步：改写摘要'));
+  }
+}
+function showSource(){const S=$('#stage');if(S.querySelector('.src'))return;S.querySelector('.ai-sum').after(el('div',{class:'reading src',style:'margin-top:14px;font-size:15px'},...L.paras.map((p,i)=>el('p',{},el('span',{class:'pn'},String(i+1)),p))))}
+
+function s4(S){
+  head(S,'第 5 步 · 表达与迁移','用自己的话写，不照抄原句。摘要要有主旨、关键关系，并做取舍。');
+  const a=el('textarea',{id:'sum',placeholder:L.analysis.kind==='audit'?'在这里写出准确的摘要…':'用 3–5 句话写出这篇文章的摘要…'});a.value=st.summary;a.oninput=()=>st.summary=a.value;
+  S.append(el('div',{class:'field'},el('span',{},L.analysis.kind==='audit'?'改写 AI 摘要':'写一段 3–5 句的摘要'),el('small',{},'评分量表：主旨准确 0–2 · 关系清楚 0–2 · 取舍得当 0–2'),a));
+  let b=null;
+  if(L.analysis.kind!=='audit'){b=el('textarea',{id:'tr',style:'min-height:90px',placeholder:'用文中的道理来回答…'});b.value=st.transfer;b.oninput=()=>st.transfer=b.value;
+    S.append(el('div',{class:'field'},el('span',{},'迁移题'),el('p',{style:'font-size:14.5px'},L.transfer),b))}
+  else S.append(el('p',{class:'note'},L.transfer));
+  const out=el('div');S.append(out);
+  const btn=el('button',{class:'btn green',onclick:async()=>{
+    if(st.summary.trim().length<20){out.replaceChildren(el('div',{class:'fb'},el('p',{},'摘要还太短，至少写两三句。')));return}
+    btn.disabled=true;
+    if(sample){out.replaceChildren(el('div',{class:'fb ai'},el('p',{class:'thinking'},'AI 导师正在按量表阅读你的摘要')));
+      try{st.sumFb=await sample.json(sumPrompt(),{modelTier:'quick'})}catch(e){st.sumFb={err:aiErr(e)}}}
+    else st.sumFb={local:true};
+    btn.disabled=false;showSum(out)}},sample?'请 AI 导师评价':'提交并查看参考');
+  if(st.sumFb)showSum(out);
+  bar(S,btn,el('button',{class:'btn sp',onclick:()=>go(5)},'完成，看今日反馈'));
+}
+function sumPrompt(){
+  return `你是初中阅读训练平台的 AI 导师。请按量表评价学生的摘要${L.analysis.kind==='audit'?'（学生是在改写一段有错误的 AI 摘要）':'和迁移题回答'}。
+量表：主旨准确 0–2；关系清楚 0–2（原因、理由、证据之间的关系）；取舍得当 0–2（不照抄、不堆细节、${L.analysis.kind==='audit'?'写出结论的边界':'长度 3–5 句'}）。
+规则：简体中文；先肯定一处，再只指出一个最需要改的地方，并引用原文段落作为依据；不要替学生重写整段摘要；next_step 是一个具体动作。
+原文：
+${L.paras.map((p,i)=>`[第${i+1}段] ${p}`).join('\n')}
+学生摘要：${st.summary}
+${L.analysis.kind==='audit'?'':`迁移题：${L.transfer}\n学生回答：${st.transfer||'（未作答）'}`}
+只回复 JSON：{"main":0,"relation":0,"selection":0,"praise":"","issue":"","transfer":"${L.analysis.kind==='audit'?'':'对迁移题回答的一句评价'}","next_step":""}`;
+}
+function showSum(out){
+  const f=st.sumFb;out.replaceChildren();
+  if(f&&!f.local&&!f.err){const tot=(+f.main||0)+(+f.relation||0)+(+f.selection||0);st.sumScore=tot;
+    out.append(el('div',{class:'fb ai'},el('h5',{},`AI 导师 · 量表 ${tot} / 6（主旨 ${f.main} · 关系 ${f.relation} · 取舍 ${f.selection}）`),
+      f.praise?el('p',{},'做得好：'+f.praise):null,f.issue?el('p',{},'可以改进：'+f.issue):null,f.transfer?el('p',{},'迁移题：'+f.transfer):null,f.next_step?el('p',{style:'color:var(--bamboo)'},'下一步：'+f.next_step):null))}
+  else if(f&&f.err)out.append(el('div',{class:'fb'},el('p',{class:'note'},f.err)));
+  out.append(el('div',{class:'fb'},el('h5',{},'参考摘要（先写完自己的再看）'),el('p',{style:'font-family:var(--f-read);line-height:1.9'},L.refSummary),
+    el('p',{class:'note'},'对照量表自查：主旨是否一句话说清？原因或理由之间的关系是否写出？有没有照抄原句或堆细节？')));
+}
+function s5(S){
+  head(S,'第 6 步 · 今日反馈与复习','只给一条最重要的建议，并把复习放进日程。');
+  const mins=st.secs/60;const cpm=st.secs?Math.round(charCount(L)/mins):0;const hits=st.recallHits.length;
+  const eff=st.secs?(hits/mins).toFixed(1):'—';
+  let analysisOk=0,analysisN=0;
+  if(L.analysis.kind==='roles'){analysisN=L.analysis.items.length+1;analysisOk=L.analysis.items.filter((it,k)=>st.analysis[k]===it.a).length+(st.mcq===L.analysis.mcq.a?1:0)}
+  else{analysisN=L.analysis.clauses.length;analysisOk=L.analysis.clauses.filter((c,k)=>st.analysis[k]===c.a).length}
+  S.append(el('div',{class:'score'},
+    el('div',{},el('b',{},st.secs?`${Math.floor(st.secs/60)}:${String(st.secs%60).padStart(2,'0')}`:'—'),el('span',{},'阅读用时')),
+    el('div',{},el('b',{},cpm||'—'),el('span',{},'字 / 分钟')),
+    el('div',{},el('b',{},`${hits}/${L.kps.length}`),el('span',{},'合书回忆关键点')),
+    el('div',{},el('b',{},eff),el('span',{},'有效效率（关键点 / 分钟）')),
+    el('div',{},el('b',{},`${analysisOk}/${analysisN}`),el('span',{},L.analysis.kind==='audit'?'AI 摘要核查':'结构与推理')),
+    el('div',{},el('b',{},st.sumScore!=null?st.sumScore+'/6':'—'),el('span',{},'摘要量表'))));
+  const weakest = hits/L.kps.length<0.5?'回忆':analysisOk/analysisN<0.6?(L.analysis.kind==='audit'?'核查':'分析'):'表达';
+  const tip={回忆:'今天的回忆只覆盖了不到一半的关键点。下次读完每一段，停下来用一句话在心里说出这段讲了什么，再往下读。',
+    分析:'结构判断还有几处不准。下次先找每段的第一句和关联词（首先、其次、当然、所以），它们往往标出了段落的作用。',
+    核查:'核查时有几句判断不准。记住三步：找到原文对应的句子，比较数字和程度词，确认原文是否真的提到。',
+    表达:'回忆和分析都不错。下次写摘要时试着把字数压到 100 字以内，逼自己做取舍。'}[weakest];
+  S.append(el('div',{class:'fb ai',style:'margin-top:18px'},el('h5',{},'今天最重要的一条建议'),el('p',{},tip)));
+  if(st.question)S.append(el('div',{class:'fb'},el('h5',{},'回看你的阅读问题'),el('p',{},st.question),el('p',{class:'note'},'文章回答了它吗？如果没有，这正是值得继续查资料的地方。')));
+  S.append(el('div',{class:'field'},el('span',{},'间隔复习已安排'),el('div',{class:'review'},el('span',{class:'tag o'},'明天 · 2 分钟再提取：'+L.kps[0].t.split('：')[0]+'等 3 个关键点'),el('span',{class:'tag'},'7 天后 · 与本周其他文章混合回忆'))));
+  S.append(el('p',{class:'note',style:'margin-top:8px'},'说明：字 / 分钟只作参考。平台更看重“有效效率”，也就是单位时间内正确提取的关键点数。读得快但记不住，不算进步。'));
+  bar(S,el('button',{class:'btn ghost',onclick:()=>pick(L.id)},'重做这节课'),el('button',{class:'btn sp',onclick:()=>{const ids=Object.keys(LESSONS);pick(ids[(ids.indexOf(L.id)+1)%ids.length])}},'下一节示范课'));
+}
+
+/* ---------- tutor chat ---------- */
+let turns=[],chatCtl=null;
+$('#tutorBtn').onclick=()=>{const d=$('#drawer');d.hidden=!d.hidden;if(!d.hidden){if(!turns.length)greet();$('#chatIn').focus()}};
+function greet(){addMsg('a','我是你的阅读导师。卡住的时候问我，我会给你线索，但不会直接告诉你答案。');renderChips()}
+function renderChips(){const c={0:['这类文章一般怎么展开？'],1:['这个词是什么意思？','这一段在讲什么？'],2:['我想不起来了，给点线索','回忆要写到什么程度？'],3:['怎么判断段落的作用？','这个推理哪里有问题？'],4:['摘要怎么做取舍？','迁移题从哪里入手？'],5:['我该怎么复习？']}[st?st.step:0]||[];
+  $('#chips').replaceChildren(...c.map(t=>el('button',{type:'button',onclick:()=>ask(t)},t)))}
+function addMsg(r,t){const m=el('div',{class:'msg '+r},t);$('#chat').append(m);$('#chat').scrollTop=1e6;return m}
+const RULES=()=>`你是“深读”平台的 AI 阅读导师，正在辅导一名${L.grade}学生阅读《${L.title}》（${L.type}）。
+铁律：
+1. 给提示，不给答案。不要直接说出段落作用、推理题答案、关键点内容或替学生写摘要；用提问、线索、指出段落位置的方式引导。
+2. 学生现在处于第 ${st.step+1} 步「${STEPS[st.step]}」。${st.step===2?'这是合书回忆环节：绝对不要复述或引用原文内容，只能给线索词或提示“想想第几段讲了什么”。':''}
+3. 学生要求“直接告诉我答案”时，温和地拒绝，并给一个更具体的提示。
+4. 回答用简体中文，口语化，不超过 80 字，一次只问一个问题。
+5. 只谈与这篇文章和阅读方法有关的内容。
+文章原文（供你参考，不要大段引用）：
+${L.paras.map((p,i)=>`[第${i+1}段] ${p}`).join('\n')}`;
+async function ask(q){
+  if(!sample||!L)return;q=q.trim();if(!q)return;
+  addMsg('u',q);turns.push({role:'user',content:q});$('#chatIn').value='';
+  const m=addMsg('a','');m.classList.add('thinking');
+  chatCtl?.abort();chatCtl=new AbortController();$('#chatSend').disabled=true;
+  try{const {text}=await sample([{role:'user',content:RULES()},...turns.slice(-8)],{modelTier:'quick',cache:false,signal:chatCtl.signal,onText:({text})=>{m.classList.remove('thinking');m.textContent=text}});
+    m.classList.remove('thinking');m.textContent=text;turns.push({role:'assistant',content:text})}
+  catch(e){m.classList.remove('thinking');if(e.code==='cancelled'){m.textContent=e.text||'（已停止）'}else{m.textContent=e.text||aiErr(e);turns.pop()}}
+  finally{$('#chatSend').disabled=false;renderChips()}
+}
+$('#chatForm').addEventListener('submit',e=>{e.preventDefault();ask($('#chatIn').value)});
+
+/* ---------- boot ---------- */
+pick(LESSONS[store.get('dr-lesson')]?store.get('dr-lesson'):'heat');
+const savedTab=store.get('dr-tab');
+showTab(location.hash==='#train'?'train':['overview','train','library','report','teacher'].includes(savedTab)?savedTab:'overview');
+</script>
+
+</body>
+</html>
