@@ -1,0 +1,62 @@
+import type { Metadata, Viewport } from "next";
+import Link from "next/link";
+import { currentUser } from "@/server/auth";
+import { Nav, LogoutButton } from "./nav";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "深读 DeepRead",
+  description: "AI 时代的深度阅读与判断力训练",
+};
+
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
+
+const LINKS = {
+  STUDENT: [
+    { href: "/", label: "今日训练" },
+    { href: "/library", label: "内容库" },
+    { href: "/reviews", label: "复习" },
+    { href: "/report", label: "我的报告" },
+    { href: "/levels", label: "能力量表" },
+  ],
+  TEACHER: [
+    { href: "/teacher", label: "班级" },
+    { href: "/library", label: "内容库" },
+    { href: "/levels", label: "能力量表" },
+  ],
+} as const;
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await currentUser();
+  const links = user ? (user.role === "STUDENT" ? LINKS.STUDENT : LINKS.TEACHER) : [];
+  return (
+    <html lang="zh-CN">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        />
+      </head>
+      <body>
+        <header className="top">
+          <div className="wrap">
+            <Link href="/" className="brand" style={{ textDecoration: "none" }}>
+              <b>深读</b>
+              <span>DEEPREAD</span>
+            </Link>
+            {user && <Nav links={[...links]} />}
+            {user && (
+              <div className="who">
+                {user.name}
+                <LogoutButton />
+              </div>
+            )}
+          </div>
+        </header>
+        <main className="wrap">{children}</main>
+      </body>
+    </html>
+  );
+}
