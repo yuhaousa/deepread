@@ -1,22 +1,9 @@
-import Link from "next/link";
-import { ABILITIES, ABILITY_META } from "@/lib/domain";
-import { LEARNER_SORT_KEYS, pct, sortLearners, type LearnerSortKey } from "@/server/admin/metrics";
+import { LearnerTable } from "@/app/learner-table";
+import { LEARNER_SORT_KEYS, sortLearners } from "@/server/admin/metrics";
 import { adminOptions, learnerPerformance } from "@/server/admin/queries";
 import { pageUser } from "@/server/pages";
 
 export const dynamic = "force-dynamic";
-
-const day = (d: Date | null) => (d ? d.toLocaleDateString("zh-CN", { month: "numeric", day: "numeric", timeZone: "Asia/Singapore" }) : "—");
-const cellPct = (v: number | null) => (v === null ? "—" : `${pct(v)}%`);
-
-const COLUMNS: { key: LearnerSortKey; label: string }[] = [
-  { key: "name", label: "学生" },
-  { key: "completed", label: "已完成" },
-  { key: "lastActive", label: "最近训练" },
-  { key: "avgRecall", label: "回忆覆盖" },
-  { key: "avgAnalysis", label: "结构分析" },
-  { key: "avgExpress", label: "摘要量表" },
-];
 
 type SP = { q?: string; c?: string; sort?: string; dir?: string; flag?: string };
 
@@ -59,58 +46,9 @@ export default async function AdminLearners({ searchParams }: { searchParams: Pr
         共 {rows.length} 名学生 · 回忆覆盖、结构分析、摘要量表为已完成训练的平均达标率；等级默认 L2。
       </p>
 
-      <div className="tablewrap" style={{ marginTop: 8 }}>
-        <table className="admin-table num">
-          <thead>
-            <tr>
-              {COLUMNS.slice(0, 1).map((c) => <SortTh key={c.key} c={c} sort={sort} dir={dir} qs={qs} />)}
-              <th>班级</th>
-              {COLUMNS.slice(1).map((c) => <SortTh key={c.key} c={c} sort={sort} dir={dir} qs={qs} />)}
-              <th>能力等级</th>
-              <th>待复习</th>
-              <th>预警</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td><Link href={`/admin/learners/${r.id}`}>{r.name}</Link><div className="note"><code>{r.username}</code></div></td>
-                <td>{r.classroomName ?? "未分班"}</td>
-                <td>{r.completed}{r.inProgress ? <span className="note"> +{r.inProgress} 进行中</span> : null}</td>
-                <td>{day(r.lastActive)}</td>
-                <td>{cellPct(r.avgRecall)}</td>
-                <td>{cellPct(r.avgAnalysis)}</td>
-                <td>{cellPct(r.avgExpress)}</td>
-                <td>
-                  <div className="lvl-row">
-                    {ABILITIES.map((a) => (
-                      <span key={a} className="lvl" title={`${ABILITY_META[a].name} ${r.levels[a]}`}>
-                        {ABILITY_META[a].name}<b>{r.levels[a].slice(1)}</b>
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td>{r.dueReviews || "—"}</td>
-                <td>{r.flags.length ? <ul className="flags">{r.flags.map((f) => <li key={f}>{f}</li>)}</ul> : <span className="note">—</span>}</td>
-              </tr>
-            ))}
-            {!rows.length && <tr><td colSpan={10} className="note">没有符合条件的学生。</td></tr>}
-          </tbody>
-        </table>
+      <div style={{ marginTop: 8 }}>
+        <LearnerTable rows={rows} linkFor={(id) => `/admin/learners/${id}`} sort={{ sort, dir, href: (k, d) => qs({ sort: k, dir: d }) }} />
       </div>
     </div>
-  );
-}
-
-function SortTh({ c, sort, dir, qs }: { c: { key: LearnerSortKey; label: string }; sort: LearnerSortKey; dir: "asc" | "desc"; qs: (p: Partial<SP>) => string }) {
-  const on = sort === c.key;
-  const next = on && dir === "asc" ? "desc" : "asc";
-  return (
-    <th aria-sort={on ? (dir === "asc" ? "ascending" : "descending") : "none"}>
-      <Link href={qs({ sort: c.key, dir: next })} className="sort">
-        {c.label}
-        <span aria-hidden>{on ? (dir === "asc" ? " ↑" : " ↓") : ""}</span>
-      </Link>
-    </th>
   );
 }

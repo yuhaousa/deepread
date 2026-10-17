@@ -6,14 +6,20 @@ import { canManageClassroom } from "@/server/access";
 import { pageUser, publishedPassages } from "@/server/pages";
 import { classroomInsights } from "@/server/reports";
 import { AssignForm } from "./assign-form";
+import { LearnerTable } from "@/app/learner-table";
+import { LEARNER_SORT_KEYS, sortLearners } from "@/server/admin/metrics";
+import { learnerPerformance } from "@/server/learner/performance";
 
 export const dynamic = "force-dynamic";
 
 const fmt = (d: Date) => d.toLocaleDateString("zh-CN", { month: "numeric", day: "numeric", timeZone: "Asia/Singapore" });
 
-export default async function Teacher({ searchParams }: { searchParams: Promise<{ c?: string; a?: string }> }) {
+type SP = { c?: string; a?: string; sort?: string; dir?: string };
+
+export default async function Teacher({ searchParams }: { searchParams: Promise<SP> }) {
   const user = await pageUser("TEACHER", "ADMIN");
-  const { c, a } = await searchParams;
+  const sp = await searchParams;
+  const { c, a } = sp;
   const classes = await db.query.classrooms.findMany({
     where: user.role === "ADMIN" ? undefined : eq(schema.classrooms.teacherId, user.id),
     orderBy: asc(schema.classrooms.name),
@@ -22,9 +28,20 @@ export default async function Teacher({ searchParams }: { searchParams: Promise<
   const classId = c && classes.some((x) => x.id === c) ? c : classes[0].id;
   if (!(await canManageClassroom(user, classId))) redirect("/teacher");
 
-  const [data, passages] = await Promise.all([classroomInsights(classId, a), publishedPassages()]);
+  const [data, passages, learners] = await Promise.all([classroomInsights(classId, a), publishedPassages(), learnerPerformance({ classroomId: classId })]);
   if (!data) redirect("/teacher");
   const { classroom, assignment, insights } = data;
+
+  const sort = LEARNER_SORT_KEYS.find((k) => k === sp.sort) ?? "name";
+  const dir = sp.dir === "desc" ? "desc" : "asc";
+  const rows = sortLearners(learners, sort, dir);
+  const sortHref = (k: string, d: string) => `/teacher?${new URLSearchParams({ c: classId, ...(a ? { a } : {}), sort: k, dir: d })}#students`;
+  const classAvg = (key: "avgRecall" | "avgAnalysis" | "avgExpress") => {
+    const v = learners.map((l) => l[key]).filter((x): x is number => x !== null);
+    return v.length ? `${Math.round((v.reduce((s, x) => s + x, 0) / v.length) * 100)}%` : "—";
+  };
+  const trained = learners.filter((l) => l.completed > 0).length;
+  const flagged = learners.filter((l) => l.flags.some((f) => !f.startsWith("监护人"))).length;
 
   return (
     <>
@@ -104,22 +121,26 @@ export default async function Teacher({ searchParams }: { searchParams: Promise<
         <h2 style={{ fontSize: 24, marginTop: 6 }}>还没有布置任务</h2>
       )}
 
-      <div className="grid g2" style={{ marginTop: 36, alignItems: "start" }}>
+      <div style={{ marginTop: 36, maxWidth: 560 }}>
         <div className="card">
           <h3>布置新任务</h3>
           <AssignForm classroomId={classId} passages={passages.map((p) => ({ id: p.id, label: `${p.level} · ${p.genre} ·《${p.title}》` }))} />
         </div>
-        <div className="card">
-          <h3>学生</h3>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
-            {classroom.students.map((s) => (
-              <Link key={s.id} href={`/teacher/students/${s.id}`} className="tag">
-                {s.displayName}
-              </Link>
-            ))}
-          </div>
-        </div>
       </div>
+
+      <section className="sec" id="students">
+        <div className="eyebrow">学生学习情况</div>
+        <h2>{classroom.name} · {learners.length} 名学生</h2>
+        <div className="kpis compact" style={{ marginTop: 0 }}>
+          <div className="kpi"><span>已开始训练</span><b>{trained} / {learners.length}</b></div>
+          <div className="kpi"><span>班级平均回忆覆盖</span><b>{classAvg("avgRecall")}</b></div>
+          <div className="kpi"><span>班级平均结构分析</span><b>{classAvg("avgAnalysis")}</b></div>
+          <div className="kpi"><span>班级平均摘要量表</span><b>{classAvg("avgExpress")}</b></div>
+          <div className="kpi"><span>有学习预警</span><b>{flagged} 人</b><small>回忆偏低、长期未训练或未开始</small></div>
+        </div>
+        <p className="note">回忆覆盖、结构分析、摘要量表为该生已完成训练的平均达标率。点击表头排序，点击姓名查看完整报告与训练记录。</p>
+        <LearnerTable rows={rows} linkFor={(id) => `/teacher/students/${id}`} showClass={false} sort={{ sort, dir, href: sortHref }} />
+      </section>
     </>
   );
 }

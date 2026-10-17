@@ -12,7 +12,7 @@ const chars = (p: { paragraphs: string[]; lead: string }) => p.paragraphs.join("
 
 export async function studentReport(studentId: string, now = new Date()) {
   const [user, levels, attempts, done] = await Promise.all([
-    db.query.users.findFirst({ where: eq(users.id, studentId), columns: { id: true, displayName: true, grade: true } }),
+    db.query.users.findFirst({ where: eq(users.id, studentId), columns: { id: true, displayName: true, grade: true, classroomId: true } }),
     db.query.mastery.findMany({ where: eq(mastery.studentId, studentId) }),
     db.query.abilityAttempts.findMany({ where: and(eq(abilityAttempts.studentId, studentId), gte(abilityAttempts.createdAt, new Date(now.getTime() - 4 * WEEK))) }),
     db.query.sessions.findMany({
@@ -77,7 +77,8 @@ export async function studentReport(studentId: string, now = new Date()) {
   });
 
   return {
-    student: user,
+    student: { id: user.id, displayName: user.displayName, grade: user.grade },
+    classroomId: user.classroomId,
     completed: done.length,
     abilities,
     calibration,
