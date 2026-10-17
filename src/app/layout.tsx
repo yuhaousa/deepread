@@ -42,11 +42,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <header className="top">
           <div className="wrap">
-            <Link href="/" className="brand" style={{ textDecoration: "none" }}>
+            <Link href={user ? "/" : "/welcome"} className="brand" style={{ textDecoration: "none" }}>
               <b>深读</b>
               <span>DEEPREAD</span>
             </Link>
             {user && <Nav links={[...links]} />}
+            {!user && (
+              <Link href="/login" className="btn ghost login-link">
+                登录
+              </Link>
+            )}
             {user && (
               <div className="who">
                 {user.name}

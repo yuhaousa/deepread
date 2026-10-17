@@ -42,7 +42,7 @@ export default function LoginPage() {
           {busy ? "登录中…" : "登录"}
         </button>
       </form>
-      <p className="note">演示账号：学生 s2401 · 教师 teacher@deepread.local · 密码均为 deepread123</p>
+      <p className="note">演示账号：学生 student · 教师 teacher · 管理员 admin · 密码均为 Bamboo123</p>
     </div>
   );
 }

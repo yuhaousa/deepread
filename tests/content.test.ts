@@ -1,7 +1,8 @@
 // 内容完整性：每篇种子材料的题目都必须有原文依据、答案下标合法。
 import { describe, expect, it } from "vitest";
 import { PASSAGES } from "@/content/passages";
-import { ABILITIES, LEVELS } from "@/lib/domain";
+import { LEVELED_PASSAGES } from "@/content/passages-leveled";
+import { ABILITIES, LEVEL_META, LEVELS, charCount } from "@/lib/domain";
 import { matchKeyPoints } from "@/server/assessment/rules";
 
 describe.each(PASSAGES)("材料《$title》", (p) => {
@@ -55,4 +56,27 @@ it("六项能力各有至少一篇主训练材料", () => {
 
 it("slug 唯一", () => {
   expect(new Set(PASSAGES.map((p) => p.slug)).size).toBe(PASSAGES.length);
+});
+
+it("五个等级各有至少两篇材料，且每级覆盖至少两项能力", () => {
+  for (const l of LEVELS) {
+    const at = PASSAGES.filter((p) => p.level === l);
+    expect(at.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(at.map((p) => p.primaryAbility)).size).toBeGreaterThanOrEqual(2);
+  }
+});
+
+describe.each(LEVELED_PASSAGES)("分级扩充材料《$title》", (p) => {
+  it("篇幅符合该等级的字数区间", () => {
+    const [min, max] = LEVEL_META[p.level].length.match(/\d+/g)!.map(Number);
+    const n = charCount(p);
+    expect(n).toBeGreaterThanOrEqual(min);
+    expect(n).toBeLessThanOrEqual(max);
+  });
+
+  it("段落作用 / 核查题的答案不是按位置依次排列", () => {
+    const a = p.analysis;
+    const answers = a.kind === "roles" ? a.items.map((i) => i.answer) : a.kind === "audit" ? a.clauses.map((c) => c.answer) : null;
+    if (answers) expect(answers.some((v, i) => v !== i)).toBe(true);
+  });
 });

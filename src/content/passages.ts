@@ -3,6 +3,7 @@
 // 正式发布前须走内容审核流（事实核查、年龄适配、题目有原文依据）。
 
 import type { PassageSpec } from "@/lib/domain";
+import { LEVELED_PASSAGES } from "@/content/passages-leveled";
 
 const ORIGINAL = "平台编辑原创，可商用";
 
@@ -591,6 +592,9 @@ export const PASSAGES: PassageSpec[] = [
     refSummary:
       "上下班时间，共享单车会在住宅区和地铁站、写字楼之间像潮水一样集中流动，造成有的地方缺车、有的地方堆积。运营公司通过夜间人工调度、奖励用户骑往缺车区域、用数据预测需求来缓解，但调度成本仍然较高。",
   },
+
+  // ───────────────────────── 分级扩充材料（L1–L5）─────────────────────────
+  ...LEVELED_PASSAGES,
 ];
 
 export const findPassage = (slug: string) => PASSAGES.find((p) => p.slug === slug);
