@@ -1,5 +1,5 @@
 // Cloudflare Workers 部署配置（OpenNext 适配器）。
-// 部署前：wrangler d1 create deepread，把返回的 database_id 填到下面。
+// D1 database created in the Cloudflare dashboard; see binding below.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "deepread",
@@ -21,7 +21,7 @@
     {
       "binding": "DB",
       "database_name": "deepread",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "d5ca97ea-512a-4bb7-8f4e-a84059bca280",
       "migrations_dir": "drizzle"
     }
   ],
