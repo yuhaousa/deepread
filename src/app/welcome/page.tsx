@@ -116,7 +116,7 @@ export default function Welcome() {
         </div>
       </section>
 
-      <section className="sec">
+      <section className="sec" id="library">
         <div className="eyebrow">分级内容库</div>
         <h2>从小学高年级到高中，五级材料逐步加难</h2>
         <p className="lede">每篇材料都有内容卡片、关键点和有原文依据的题目，按篇幅、结构和推理难度分级。</p>
@@ -144,7 +144,7 @@ export default function Welcome() {
         </div>
       </section>
 
-      <section className="sec roles">
+      <section className="sec roles" id="tutors">
         <div className="eyebrow">AI 导师</div>
         <h2>四种角色，同一条护栏：给提示，不给答案</h2>
         <div className="grid g4">
@@ -189,3 +189,4 @@ export default function Welcome() {
     </div>
   );
 }
+

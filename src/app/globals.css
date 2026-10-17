@@ -257,6 +257,7 @@ a.tag{text-decoration:none}
 
 /* ---------- 落地页 ---------- */
 .landing .hero{padding-top:12px}
+.landing .sec[id]{scroll-margin-top:76px}
 .landing .cta{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
 .landing .cta .btn{text-decoration:none}
 .landing .sheet-cap{font-family:var(--f-ui);margin-bottom:6px}
@@ -349,11 +350,6 @@ body:has(.hero-slider){overflow-x:clip}
 .scene-bamboo{background:linear-gradient(135deg,#0B2E22 0%,#17503B 55%,#2E7D5B 100%)}
 .scene-dusk{background:linear-gradient(135deg,#2A1A10 0%,#4E301A 55%,#7E5228 100%)}
 .scene-night{background:linear-gradient(135deg,#0D1420 0%,#1B2638 55%,#22405A 100%)}
-.scene-ink,.scene-bamboo,.scene-dusk,.scene-night{background-size:cover;background-position:center;background-repeat:no-repeat}
-.scene-ink{background-image:linear-gradient(90deg,rgba(17,28,51,.94) 0%,rgba(27,42,74,.78) 48%,rgba(44,71,106,.42) 100%),url("/images/reading-hero.jpg")}
-.scene-bamboo{background-image:linear-gradient(90deg,rgba(11,46,34,.94) 0%,rgba(23,80,59,.76) 48%,rgba(46,125,91,.42) 100%),url("/images/reading-hero.jpg")}
-.scene-dusk{background-image:linear-gradient(90deg,rgba(42,26,16,.94) 0%,rgba(78,48,26,.76) 48%,rgba(126,82,40,.42) 100%),url("/images/reading-hero.jpg")}
-.scene-night{background-image:linear-gradient(90deg,rgba(13,20,32,.94) 0%,rgba(27,38,56,.78) 48%,rgba(34,64,90,.42) 100%),url("/images/reading-hero.jpg")}
 .hs-bg{position:absolute;inset:0;overflow:hidden;z-index:-1;pointer-events:none}
 .hs-glyph{position:absolute;right:-4vw;top:50%;font-family:var(--f-read);font-weight:700;font-size:min(62vw,680px);line-height:1;color:rgba(255,255,255,.07);transform:translateY(-50%);animation:hs-drift 26s ease-in-out infinite alternate;user-select:none}
 .hs-glow{position:absolute;width:60vw;height:60vw;max-width:820px;max-height:820px;left:-12vw;bottom:-30vw;border-radius:50%;background:radial-gradient(closest-side,rgba(232,163,61,.22),transparent);animation:hs-float 18s ease-in-out infinite alternate}
@@ -414,7 +410,6 @@ body:has(.hero-slider){overflow-x:clip}
 .hero-stats span{font-size:12.5px;color:var(--mute)}
 .hero-stats .btn{margin-left:auto;text-decoration:none;padding:9px 26px}
 .top .btn.green.login-link{color:#fff}
-
 .growth{margin-top:52px}
 .growth-copy{display:grid;gap:8px}
 .growth-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:stretch}
@@ -436,7 +431,6 @@ body:has(.hero-slider){overflow-x:clip}
 .plot-line{fill:none;stroke:var(--bamboo);stroke-width:4;stroke-linecap:round}
 .plot-points{fill:var(--paper);stroke:var(--bamboo);stroke-width:3}
 .growth-chart-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mute)}
-
 @media (max-width:860px){
   .hs-inner{grid-template-columns:1fr;gap:28px;padding-top:40px;padding-bottom:96px}
   .hs-slide{min-height:0}
@@ -461,7 +455,6 @@ body:has(.hero-slider){overflow-x:clip}
 .answer-key b{color:var(--ink);font-weight:500}
 .teacher-kit .eyebrow{color:var(--warn)}
 .lib-actions .btn.sm{padding:6px 14px;font-size:13.5px}
-
 
 /* ---------- 管理员与教师侧边栏 ---------- */
 .app-shell{min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr)}
@@ -488,3 +481,4 @@ body:has(.hero-slider){overflow-x:clip}
   .sidebar-footer span{display:none}
   .app-content main.wrap{padding:24px 16px 64px}
 }
+

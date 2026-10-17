@@ -19,6 +19,12 @@ export function AppChrome({
   const pathname = usePathname();
   const isPublicPage = pathname === "/welcome" || pathname === "/login";
   const useSidebar = !isPublicPage && (user?.role === "ADMIN" || user?.role === "TEACHER");
+  const publicLinks = [
+    { href: "/welcome#loop", label: "训练流程" },
+    { href: "/welcome#growth-title", label: "成长图谱" },
+    { href: "/welcome#library", label: "内容库" },
+    { href: "/welcome#tutors", label: "AI 导师" },
+  ];
 
   if (useSidebar && user) {
     return (
@@ -48,7 +54,11 @@ export function AppChrome({
             <b>诺雅深读</b>
             <span>NOYA DEEPREAD</span>
           </Link>
-          {user && <Nav links={links} />}
+          {user ? <Nav links={links} /> : (
+            <nav className="tabs" aria-label="首页导航">
+              {publicLinks.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
+            </nav>
+          )}
           {!user && <Link href="/login" className="btn green login-link">登录</Link>}
           {user && <div className="who">{user.name}<LogoutButton /></div>}
         </div>
