@@ -1,0 +1,26 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: deepread
+      POSTGRES_PASSWORD: deepread
+      POSTGRES_DB: deepread
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U deepread"]
+      interval: 5s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db: { condition: service_healthy }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://deepread:deepread@db:5432/deepread?schema=public
+    ports: ["3000:3000"]
+    profiles: ["app"]
+
+volumes:
+  pgdata:

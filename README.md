@@ -1,19 +1,107 @@
-# 深读 DeepRead · 平台 UI 原型
+# 深读 DeepRead
 
-AI 阅读学习能力平台的可交互 UI 原型（单文件 HTML，直接用浏览器打开 `index.html` 即可）。
+AI 时代的深度阅读与判断力训练平台。面向初中到高中学生，每天一篇短文、15–25 分钟，用“预测 → 专注阅读 → 合书回忆 → 结构分析 → 表达迁移 → 反馈复习”六步闭环，练出抓得住重点、记得住、讲得清、能核查 AI 四件事。AI 只做导师：**给提示，不给答案**。
 
-## 包含模块
+- 项目方案（PRD、能力量表、技术架构、排期）：见 Claude 项目文档《深读 DeepRead · 项目方案 v1.0》
+- 原始 UI 原型：[`prototype/index.html`](prototype/index.html)（单文件，可直接用浏览器打开）
 
-- **平台总览**：定位、六项能力模型（对应 PISA 阅读框架）、每日训练闭环、AI 导师四种角色、平台架构、学段路径
-- **训练体验**：三节可完整体验的示范课
-  - 说明文《城市为什么会“发烧”？》：段落作用与因果推断
-  - 议论文《刷短视频会让人变笨吗？》：论证要素与推理错误
-  - AI 摘要核查《午睡能让记忆更好吗？》：核查 AI 摘要中的夸大、数字错误与编造
-- **课程与内容库**：四阶段技能树、12 节典型课、一周课表、内容卡片
-- **学习报告**、**教师端**：使用示例数据展示
+## 快速开始
 
-## 说明
+需要 Node 22+ 和 PostgreSQL 16。
 
-- 本地打开时，反馈使用内置的关键点评分与参考答案；在 Claude Artifact 中运行时，AI 导师与 AI 反馈由 Claude 实时生成。
-- 课文均为原创教学材料；报告与教师端数据为示例。
-- 字体通过 Google Fonts 加载，离线时使用系统中文字体。
+```bash
+cp .env.example .env            # 按需修改 DATABASE_URL、AUTH_SECRET、模型配置
+docker compose up -d db         # 或使用自己的 Postgres
+npm install
+npm run db:migrate              # 建表
+npm run db:seed                 # 9 篇材料 + 演示学校/班级/账号（会清空数据）
+npm run dev                     # http://localhost:3000
+```
+
+演示账号（密码均为 `deepread123`）：
+
+| 角色 | 账号 | 说明 |
+| --- | --- | --- |
+| 学生 | `s2401` 林同学 | 有近四周训练记录、作品对比和到期复习 |
+| 学生 | `s2402`–`s2407` | 部分已完成本周任务 |
+| 学生 | `s2408` 吴同学 | 监护人尚未同意：可以训练，不能用 AI 导师对话 |
+| 教师 | `teacher@deepread.local` | 初二（3）班 |
+
+不配置模型 Key 也能完整使用：回忆按关键词评分，导师返回内置提示，摘要显示参考答案并等待教师抽检。
+
+## 模型配置
+
+`quick` 档（回忆判定、导师提示）和 `deep` 档（摘要与迁移量表）分别配置提供方与模型，见 `.env.example`。
+
+| 区域 `DEPLOY_REGION` | 允许的提供方 |
+| --- | --- |
+| `intl`（新加坡 / 东盟） | anthropic、openai、deepseek、qwen |
+| `cn`（中国大陆） | deepseek、qwen（数据不出境） |
+
+任何调用失败或超过 `LLM_TIMEOUT_MS` 都会降级到规则评分 / 内置提示，训练不中断。每次调用写入 `ai_calls` 表（只存哈希后的用户 ID），用于成本看板。`*_BASE_URL` 可指向企业网关或私有部署。
+
+## 目录结构
+
+```
+src/
+  app/                    页面（App Router）与 API 路由
+    train/[id]/trainer.tsx   六步训练闭环（学生端核心）
+    teacher/                 教师端：共性错误、分组建议、布置任务
+    levels/                  阅读能力等级量表
+  content/passages.ts     种子材料（9 篇，含内容卡片、关键点、题目）
+  db/schema.ts            数据模型（Drizzle ORM）
+  lib/domain.ts           六项能力、五级量表、题型定义
+  server/
+    assessment/           测评引擎：规则评分、关键点匹配、AI 量表
+    tutor/                AI 导师：角色提示词、护栏检测、对话服务
+    learner/              学习者模型：能力折算、升级规则、复习调度
+    llm/router.ts         多模型路由（按区域 / 档位）
+    training.ts           训练闭环服务
+    reports.ts            学生报告、班级洞察
+drizzle/                  SQL 迁移
+scripts/                  migrate / seed
+tests/                    单元测试（vitest）
+```
+
+## 设计要点
+
+- **浏览器拿不到答案。** `toClient()` 发给浏览器的材料不含答案、关键点和参考摘要；排序题的环节会打乱。答案与解析只在提交后由服务器返回。
+- **导师护栏三层。** 角色提示词约束；输出后用规则检测复述原文、说出关键点、直接给答案（`tutor/guardrail.ts`），命中即替换为按步骤准备的安全提示，并记录在 `tutor_messages.guardrail`；每节课最多 20 轮对话。红队用例见 `tests/guardrail.test.ts`。
+- **回忆评分取并集。** 关键词匹配作为离线基线，AI 语义判定作为补充，两者取并集；AI 反馈本身也要过护栏。
+- **量表低置信度进抽检。** AI 量表 `confidence < 0.6` 的作答标记 `flagged`，进入教师抽检。
+- **等级规则**（`learner/levels.ts`）：在本级或更高等级材料上连续 4 次达标率 ≥ 70%，且最近一次 7 天复习没有失败，即升一级；本级连续 3 次 < 40% 推送补练，不显示降级。
+- **合规。** 监护人未同意时不能使用 AI 对话；`DELETE /api/me/data` 一键删除作答原文与对话；每日训练节数上限（`DAILY_SESSION_LIMIT`）；所有 AI 输出标注“AI 导师”。
+
+## API 一览
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| POST | `/api/auth/login` · `/api/auth/logout` | 登录 / 退出 |
+| GET | `/api/passages` | 内容库（`?genre=&grade=`） |
+| POST | `/api/sessions` | 开始训练（同一篇未完成则继续） |
+| GET / PATCH | `/api/sessions/:id` | 读取去答案材料；推进步骤、上报用时、标记、预测 |
+| POST | `/api/sessions/:id/recall` | 合书回忆 → 关键点覆盖 + 回忆教练反馈 |
+| POST | `/api/sessions/:id/analysis` | 结构分析 / 核查 / 排序 / 定位题 → 规则评分 |
+| POST | `/api/sessions/:id/summary` | 摘要与迁移 → 量表评分 |
+| POST | `/api/sessions/:id/complete` | 结算今日反馈、安排复习、更新等级（幂等） |
+| POST | `/api/tutor` | 导师对话 |
+| GET / POST | `/api/reviews/due` · `/api/reviews/:id` | 到期复习 / 作答 |
+| GET | `/api/reports/student/:id` | 学生能力报告（本人或任课教师） |
+| GET | `/api/classrooms/:id/insights` | 班级洞察（`?assignmentId=`） |
+| POST | `/api/assignments` | 布置任务 |
+| DELETE | `/api/me/data` | 删除我的作答数据 |
+
+## 开发命令
+
+```bash
+npm run typecheck    # TypeScript
+npm test             # 81 个单元测试：内容完整性、评分、护栏红队、等级、调度、路由、班级洞察
+npm run build
+npm run db:generate  # 修改 src/db/schema.ts 后生成迁移
+```
+
+## 已知差距（进入试点前要补）
+
+- 种子材料中新增的 6 篇（第 8 节示例）为 224–322 字，短于量表中 L2–L4 的篇幅要求；正式内容需按量表扩写并走审核流。
+- 尚未实现：内容后台（制卡出题、审核发布）、入学定级测、家长周报推送、教师抽检改分界面、导师流式输出。
+- 复习提醒的推送（BullMQ / 消息通道）尚未接入，目前复习在首页与复习页展示。
