@@ -38,6 +38,7 @@ const LINKS = {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
   const links = user ? (user.role === "STUDENT" ? LINKS.STUDENT : user.role === "ADMIN" ? LINKS.ADMIN : LINKS.TEACHER) : [];
+  const useSidebar = user?.role === "ADMIN" || user?.role === "TEACHER";
   return (
     <html lang="zh-CN">
       <head>
@@ -49,27 +50,49 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body>
-        <header className="top">
-          <div className="wrap">
-            <Link href={user ? homeFor(user.role) : "/welcome"} className="brand" style={{ textDecoration: "none" }}>
-              <b>深读</b>
-              <span>DEEPREAD</span>
-            </Link>
-            {user && <Nav links={[...links]} />}
-            {!user && (
-              <Link href="/login" className="btn green login-link">
-                登录
+        {useSidebar && user ? (
+          <div className="app-shell">
+            <aside className="app-sidebar">
+              <Link href={homeFor(user.role)} className="brand sidebar-brand" style={{ textDecoration: "none" }}>
+                <b>深读</b>
+                <span>DEEPREAD</span>
               </Link>
-            )}
-            {user && (
-              <div className="who">
-                {user.name}
+              <div className="sidebar-caption">{user.role === "ADMIN" ? "管理后台" : "教师工作区"}</div>
+              <Nav links={[...links]} variant="sidebar" />
+              <div className="sidebar-footer">
+                <span>{user.name}</span>
                 <LogoutButton />
               </div>
-            )}
+            </aside>
+            <div className="app-content">
+              <main className="wrap">{children}</main>
+            </div>
           </div>
-        </header>
-        <main className="wrap">{children}</main>
+        ) : (
+          <>
+            <header className="top">
+              <div className="wrap">
+                <Link href={user ? homeFor(user.role) : "/welcome"} className="brand" style={{ textDecoration: "none" }}>
+                  <b>深读</b>
+                  <span>DEEPREAD</span>
+                </Link>
+                {user && <Nav links={[...links]} />}
+                {!user && (
+                  <Link href="/login" className="btn green login-link">
+                    登录
+                  </Link>
+                )}
+                {user && (
+                  <div className="who">
+                    {user.name}
+                    <LogoutButton />
+                  </div>
+                )}
+              </div>
+            </header>
+            <main className="wrap">{children}</main>
+          </>
+        )}
       </body>
     </html>
   );

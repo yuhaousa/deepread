@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-export function Nav({ links }: { links: { href: string; label: string }[] }) {
+export function Nav({ links, variant = "top" }: { links: { href: string; label: string }[]; variant?: "top" | "sidebar" }) {
   const path = usePathname();
   const matches = (href: string) => (href === "/" ? path === "/" || path.startsWith("/train") : path === href || path.startsWith(`${href}/`));
   // 多个链接同时匹配时（如 /admin 与 /admin/users），只高亮最具体的一个
   const current = links.filter((l) => matches(l.href)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
   const active = (href: string) => href === current;
   return (
-    <nav className="tabs" aria-label="主导航">
+    <nav className={`tabs${variant === "sidebar" ? " sidebar-tabs" : ""}`} aria-label={variant === "sidebar" ? "侧边栏导航" : "主导航"}>
       {links.map((l) => (
         <Link key={l.href} href={l.href} aria-current={active(l.href) ? "page" : undefined}>
           {l.label}

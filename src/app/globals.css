@@ -437,3 +437,30 @@ body:has(.hero-slider){overflow-x:clip}
 .answer-key b{color:var(--ink);font-weight:500}
 .teacher-kit .eyebrow{color:var(--warn)}
 .lib-actions .btn.sm{padding:6px 14px;font-size:13.5px}
+
+
+/* ---------- 管理员与教师侧边栏 ---------- */
+.app-shell{min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr)}
+.app-sidebar{position:sticky;top:0;height:100vh;min-height:560px;padding:24px 18px 18px;background:var(--paper);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
+.sidebar-brand{margin:0 0 4px}
+.sidebar-caption{font-size:12px;letter-spacing:.08em;color:var(--mute);padding:0 10px}
+.app-sidebar nav.sidebar-tabs{display:grid;align-content:start;gap:4px;max-width:none;overflow:visible;margin-top:8px}
+.sidebar-tabs a{display:block;padding:10px 12px;border-left:3px solid transparent;border-radius:7px;color:var(--ink-2);text-decoration:none;white-space:nowrap}
+.sidebar-tabs a:hover{background:var(--bg);color:var(--ink)}
+.sidebar-tabs a[aria-current="page"]{background:var(--bamboo-soft);border-left-color:var(--bamboo);color:var(--bamboo);font-weight:500}
+.sidebar-footer{margin-top:auto;padding:14px 8px 0;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--mute);font-size:13px}
+.sidebar-footer button{border:1px solid var(--line);border-radius:6px;padding:4px 10px;background:transparent;color:var(--ink-2);cursor:pointer;font-size:12.5px}
+.app-content{min-width:0;min-height:100vh}
+.app-content main.wrap{width:100%;max-width:1440px;margin:0;padding:32px clamp(20px,4vw,56px) 80px}
+@media(max-width:860px){
+  .app-shell{grid-template-columns:minmax(0,1fr)}
+  .app-sidebar{position:sticky;z-index:9;top:0;height:auto;min-height:0;padding:8px 16px 0;border-right:0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:0}
+  .sidebar-brand{grid-column:1;grid-row:1;margin:0}
+  .sidebar-caption{display:none}
+  .app-sidebar nav.sidebar-tabs{grid-column:1/-1;grid-row:2;display:flex;overflow-x:auto;gap:4px;margin:4px 0 0;scrollbar-width:none}
+  .sidebar-tabs a{padding:8px 11px;border-left:0;border-bottom:2px solid transparent;border-radius:6px 6px 0 0}
+  .sidebar-tabs a[aria-current="page"]{border-bottom-color:var(--bamboo)}
+  .sidebar-footer{grid-column:2;grid-row:1;margin:0;padding:0;border:0}
+  .sidebar-footer span{display:none}
+  .app-content main.wrap{padding:24px 16px 64px}
+}
