@@ -13,7 +13,7 @@ export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const user = await readSession(req.cookies.get(SESSION_COOKIE)?.value);
   // 落地页对所有人公开
-  if (pathname === "/welcome") return NextResponse.next();
+  if (pathname === "/welcome" || pathname === "/about") return NextResponse.next();
   if (!user) {
     if (pathname === "/login") return NextResponse.next();
     // 未登录访问首页时先看落地页，其余页面直接去登录
