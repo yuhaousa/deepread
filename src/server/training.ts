@@ -3,7 +3,7 @@
 
 import { and, asc, count, desc, eq, gte, isNotNull, isNull, sql } from "drizzle-orm";
 import { ABILITY_META, type AbilityKey, type LevelKey, type StepKey } from "@/lib/domain";
-import { db, schema, type Tx } from "@/lib/db";
+import { db, schema } from "@/lib/db";
 import { userHash, type SessionUser } from "@/server/auth";
 import { loadPassage } from "@/server/content";
 import { matchKeyPoints, scoreAnalysis, scorePredict, type AnalysisAnswer, type AnalysisResult } from "@/server/assessment/rules";
@@ -24,13 +24,20 @@ export class TrainingError extends Error {
 
 type ResponseInsert = typeof responses.$inferInsert;
 
-/** 每次训练每类作答只保留一条（重交覆盖） */
-async function upsertResponse(r: ResponseInsert, tx: Tx | typeof db = db) {
+/** 每次训练每类作答只保留一条（重交覆盖）。返回未执行的查询，可直接 await，也可放进 db.batch。 */
+function upsertResponse(r: ResponseInsert) {
   const { sessionId: _s, kind: _k, ...set } = r;
-  await tx
+  return db
     .insert(responses)
     .values(r)
     .onConflictDoUpdate({ target: [responses.sessionId, responses.kind], set: { ...set, createdAt: new Date() } });
+}
+
+/** D1 单条语句最多 100 个绑定参数：多行插入按行数分批 */
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
 }
 
 /** 防沉迷：每日可开始的训练节数（按 UTC+8 自然日）。继续进行中的训练不受限制。 */
@@ -110,21 +117,19 @@ export async function submitRecall(user: SessionUser, id: string, text: string, 
   const calibration =
     gap >= 0.3 ? "自评明显偏高，下次读完先试着在心里复述一遍再判断。" : gap <= -0.3 ? "你比自己以为的记得更多，可以更有信心一些。" : "自评和实际比较接近，判断得很准。";
 
-  await db.transaction(async (tx) => {
-    await tx.update(sessions).set({ confidence, step: "RECALL" }).where(eq(sessions.id, id));
-    await upsertResponse(
-      {
-        sessionId: id,
-        kind: "recall",
-        answer: { text },
-        score: coverage,
-        detail: { covered, keyword, ai: ai?.covered ?? null, misconception: ai?.misconception ?? "" },
-        source: ai ? "AI" : "KEYWORD",
-        feedback: ai ? { text: ai.feedback, model: ai.model, label: "AI 回忆教练" } : null,
-      },
-      tx,
-    );
-  });
+  // D1 不支持交互式事务；batch 中的语句按顺序执行，任一失败则整体回滚
+  await db.batch([
+    db.update(sessions).set({ confidence, step: "RECALL" }).where(eq(sessions.id, id)),
+    upsertResponse({
+      sessionId: id,
+      kind: "recall",
+      answer: { text },
+      score: coverage,
+      detail: { covered, keyword, ai: ai?.covered ?? null, misconception: ai?.misconception ?? "" },
+      source: ai ? "AI" : "KEYWORD",
+      feedback: ai ? { text: ai.feedback, model: ai.model, label: "AI 回忆教练" } : null,
+    }),
+  ]);
 
   return {
     total: passage.keyPoints.length,
@@ -205,34 +210,34 @@ export async function completeSession(user: SessionUser, id: string) {
   const kps = await db.query.keyPoints.findMany({ where: eq(keyPoints.passageId, passage.id), orderBy: asc(keyPoints.order) });
   const plan = planReviews(kps.length, covered, now);
 
+  // 先读：当前等级、各能力最近的作答、最近一次 7 天复习。D1 不支持在事务里边读边写，所以判定在内存中完成。
+  const abilities = Object.entries(scores) as [AbilityKey, number][];
+  const [levelRows, recentByAbility, lastWeek] = await Promise.all([
+    db.query.mastery.findMany({ where: eq(mastery.studentId, user.id) }),
+    Promise.all(
+      abilities.map(([ability]) =>
+        db.query.abilityAttempts.findMany({
+          where: and(eq(abilityAttempts.studentId, user.id), eq(abilityAttempts.ability, ability)),
+          orderBy: desc(abilityAttempts.createdAt),
+          limit: 9,
+        }),
+      ),
+    ),
+    db.query.reviewItems.findFirst({
+      where: and(eq(reviewItems.studentId, user.id), eq(reviewItems.intervalD, 7), isNotNull(reviewItems.doneAt)),
+      orderBy: desc(reviewItems.doneAt),
+    }),
+  ]);
+
   const levelChanges: { ability: AbilityKey; to: LevelKey }[] = [];
-  await db.transaction(async (tx) => {
-    for (const [ability, score] of Object.entries(scores) as [AbilityKey, number][]) {
-      await tx.insert(abilityAttempts).values({ studentId: user.id, sessionId: id, ability, level: passage.level, genre: passage.genre, score });
-      await tx.insert(mastery).values({ studentId: user.id, ability }).onConflictDoNothing();
-      const m = await tx.query.mastery.findFirst({ where: and(eq(mastery.studentId, user.id), eq(mastery.ability, ability)) });
-      const attempts = await tx.query.abilityAttempts.findMany({
-        where: and(eq(abilityAttempts.studentId, user.id), eq(abilityAttempts.ability, ability)),
-        orderBy: desc(abilityAttempts.createdAt),
-        limit: 10,
-      });
-      const lastWeek = await tx.query.reviewItems.findFirst({
-        where: and(eq(reviewItems.studentId, user.id), eq(reviewItems.intervalD, 7), isNotNull(reviewItems.doneAt)),
-        orderBy: desc(reviewItems.doneAt),
-      });
-      const decision = decideLevel(
-        (m?.level ?? "L2") as LevelKey,
-        attempts.map((a) => ({ level: a.level as LevelKey, score: a.score, createdAt: a.createdAt })),
-        lastWeek?.passed ?? null,
-      );
-      if (decision.action === "upgrade" && m) {
-        await tx.update(mastery).set({ level: decision.to }).where(eq(mastery.id, m.id));
-        levelChanges.push({ ability, to: decision.to });
-      }
-    }
-    if (plan.length) {
-      await tx.insert(reviewItems).values(plan.map((r) => ({ studentId: user.id, keyPointId: kps[r.keyPointIndex].id, dueAt: r.dueAt, intervalD: r.intervalD })));
-    }
+  abilities.forEach(([ability, score], i) => {
+    const current = (levelRows.find((m) => m.ability === ability)?.level ?? "L2") as LevelKey;
+    const attempts = [
+      { level: passage.level, score, createdAt: now }, // 本次作答
+      ...recentByAbility[i].map((a) => ({ level: a.level as LevelKey, score: a.score, createdAt: a.createdAt })),
+    ];
+    const decision = decideLevel(current, attempts, lastWeek?.passed ?? null);
+    if (decision.action === "upgrade") levelChanges.push({ ability, to: decision.to });
   });
 
   const minutes = session.readingSeconds ? session.readingSeconds / 60 : null;
@@ -257,7 +262,19 @@ export async function completeSession(user: SessionUser, id: string) {
     },
     levelChanges,
   };
-  await db.update(sessions).set({ step: "DONE", completedAt: now, summary: result }).where(eq(sessions.id, id));
+  // 再一次性写入：能力记录、等级、复习计划、结算结果
+  const missingLevels = abilities.filter(([ability]) => !levelRows.some((m) => m.ability === ability));
+  const reviewRows = plan.map((r) => ({ studentId: user.id, keyPointId: kps[r.keyPointIndex].id, dueAt: r.dueAt, intervalD: r.intervalD }));
+  // batch 整体原子执行，顺序不影响结果；结算语句放第一位以满足非空元组类型
+  await db.batch([
+    db.update(sessions).set({ step: "DONE", completedAt: now, summary: result }).where(eq(sessions.id, id)),
+    ...(abilities.length
+      ? [db.insert(abilityAttempts).values(abilities.map(([ability, score]) => ({ studentId: user.id, sessionId: id, ability, level: passage.level, genre: passage.genre, score, createdAt: now })))]
+      : []),
+    ...(missingLevels.length ? [db.insert(mastery).values(missingLevels.map(([ability]) => ({ studentId: user.id, ability }))).onConflictDoNothing()] : []),
+    ...levelChanges.map((c) => db.update(mastery).set({ level: c.to }).where(and(eq(mastery.studentId, user.id), eq(mastery.ability, c.ability)))),
+    ...chunk(reviewRows, 10).map((rows) => db.insert(reviewItems).values(rows)),
+  ]);
   return result;
 }
 

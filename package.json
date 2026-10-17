@@ -6,32 +6,36 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv --include-runtime=false --strict-vars=false cloudflare-env.d.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx scripts/migrate.ts",
-    "db:seed": "tsx scripts/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:migrate:local": "wrangler d1 migrations apply deepread --local",
+    "db:migrate:remote": "wrangler d1 migrations apply deepread --remote",
+    "db:seed:local": "tsx scripts/seed.ts && wrangler d1 execute deepread --local --file=.wrangler/seed.sql",
+    "db:seed:remote": "tsx scripts/seed.ts && wrangler d1 execute deepread --remote --file=.wrangler/seed.sql"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.3",
+    "@opennextjs/cloudflare": "^1.20.12",
     "drizzle-orm": "^0.45.4",
     "jose": "^6.2.12",
     "next": "^16.4.2",
-    "pg": "^8.23.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.5",
-    "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "better-sqlite3": "^13.0.3",
     "drizzle-kit": "^0.31.11",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "wrangler": "^4.151.1"
   }
 }

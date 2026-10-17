@@ -1,24 +1,39 @@
 name: CI
 on: [push, pull_request]
+env:
+  WRANGLER_SEND_METRICS: "false"
 jobs:
   check:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env: { POSTGRES_USER: deepread, POSTGRES_PASSWORD: deepread, POSTGRES_DB: deepread }
-        ports: ["5432:5432"]
-        options: --health-cmd "pg_isready -U deepread" --health-interval 5s --health-retries 10
-    env:
-      DATABASE_URL: postgresql://deepread:deepread@localhost:5432/deepread?schema=public
-      AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: npm ci
-      - run: npm run db:migrate
-      - run: npm run db:seed
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
+      # 本地 D1（Miniflare）：验证迁移与种子 SQL 都能执行
+      - run: npm run db:migrate:local
+      - run: npm run db:seed:local
+      # 构建 Cloudflare Workers 产物
+      - run: npx opennextjs-cloudflare build
+        env:
+          AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret
+
+  # 推送到 main 时部署。需要在仓库设置中配置：
+  #   变量 CF_DEPLOY=true；机密 CLOUDFLARE_API_TOKEN、CLOUDFLARE_ACCOUNT_ID；
+  #   并把 wrangler.jsonc 中的 database_id 换成 wrangler d1 create 返回的 ID。
+  deploy:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.CF_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run db:migrate:remote
+      - run: npm run deploy

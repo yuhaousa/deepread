@@ -1,13 +1,11 @@
 // 鉴权：密码哈希、当前用户、会话 Cookie。学生用学号登录，不收集手机号。
-import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { createHash } from "node:crypto";
 import { readSession, SESSION_COOKIE, SESSION_MAX_AGE_S } from "@/server/session";
 
 export { readSession, signSession, SESSION_COOKIE, type RoleKey, type SessionUser } from "@/server/session";
 
-export const hashPassword = (pw: string) => bcrypt.hash(pw, 10);
-export const verifyPassword = (pw: string, hash: string) => bcrypt.compare(pw, hash);
+export { hashPassword, verifyPassword } from "@/server/password";
 
 export async function currentUser() {
   const jar = await cookies();

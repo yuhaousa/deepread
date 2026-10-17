@@ -1,17 +1,26 @@
 // 学情表现：每名学生的训练汇总与训练记录。管理后台（全部学生）与教师端（本班学生）共用，调用方负责鉴权。
 
-import { and, asc, count, desc, eq, ilike, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, lte, or, sql, type SQL } from "drizzle-orm";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import type { AbilityKey, LevelKey } from "@/lib/domain";
 import { db, schema } from "@/lib/db";
 import { buildLearnerRows, type LearnerRow } from "@/server/admin/metrics";
 
 const { users, classrooms, sessions, mastery, reviewItems } = schema;
 
-/** 搜索词中的 % _ \\ 按字面匹配 */
-export const like = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+/** 按字面包含搜索（SQLite LIKE 对 ASCII 不区分大小写；% _ \\ 转义后按字面匹配） */
+export function contains(col: SQLiteColumn, q: string): SQL {
+  const pattern = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  return sql`${col} like ${pattern} escape '\\'`;
+}
 
 export async function learnerPerformance(opts: { classroomId?: string; q?: string } = {}, now = new Date()): Promise<LearnerRow[]> {
   const q = opts.q?.trim();
+  const filter = and(
+    eq(users.role, "STUDENT"),
+    opts.classroomId ? eq(users.classroomId, opts.classroomId) : undefined,
+    q ? or(contains(users.username, q), contains(users.displayName, q)) : undefined,
+  );
   const students = await db
     .select({
       id: users.id,
@@ -24,16 +33,11 @@ export async function learnerPerformance(opts: { classroomId?: string; q?: strin
     })
     .from(users)
     .leftJoin(classrooms, eq(classrooms.id, users.classroomId))
-    .where(
-      and(
-        eq(users.role, "STUDENT"),
-        opts.classroomId ? eq(users.classroomId, opts.classroomId) : undefined,
-        q ? or(ilike(users.username, like(q)), ilike(users.displayName, like(q))) : undefined,
-      ),
-    )
+    .where(filter)
     .orderBy(asc(users.username));
   if (!students.length) return [];
-  const ids = students.map((s) => s.id);
+  // 关联表用子查询筛同一批学生，而不是把所有 ID 作为参数传入（D1 单条语句最多 100 个参数）
+  const ids = db.select({ id: users.id }).from(users).where(filter);
 
   const [sessionRows, masteryRows, due] = await Promise.all([
     db.query.sessions.findMany({

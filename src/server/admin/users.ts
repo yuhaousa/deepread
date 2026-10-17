@@ -32,10 +32,10 @@ async function studentFields(role: RoleKey, classroomId: string | null | undefin
   };
 }
 
-/** Postgres 唯一约束冲突；drizzle 会把驱动错误包在 cause 里 */
+/** 唯一约束冲突。D1 / SQLite 报 "UNIQUE constraint failed"；drizzle 可能把驱动错误包在 cause 里 */
 const isUniqueViolation = (e: unknown): boolean => {
-  const err = e as { code?: string; cause?: unknown } | null;
-  return !!err && (err.code === "23505" || (err.cause !== undefined && isUniqueViolation(err.cause)));
+  const err = e as { message?: string; cause?: unknown } | null;
+  return !!err && (/UNIQUE constraint failed/i.test(err.message ?? "") || (err.cause !== undefined && isUniqueViolation(err.cause)));
 };
 
 export async function createUser(input: UserInput) {
