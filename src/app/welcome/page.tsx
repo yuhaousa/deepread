@@ -66,7 +66,7 @@ export default function Welcome() {
         </div>
         <div className="growth-grid">
           <figure className="growth-photo">
-            <Image src="/images/reading-hero.jpg" alt="学生在安静的阅览空间中专注阅读" width={1536} height={1024} sizes="(max-width: 760px) 100vw, 48vw" />
+            <Image src="/images/reading-hero.jpg" alt="安静明亮、摆着书籍与阅读桌的阅览空间" width={1536} height={1024} sizes="(max-width: 760px) 100vw, 48vw" />
             <figcaption><span>每天一点，读得更深</span><span>阅读 · 回忆 · 表达</span></figcaption>
           </figure>
           <div className="card growth-chart">
