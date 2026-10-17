@@ -17,13 +17,14 @@ export function AppChrome({
   links: { href: string; label: string }[];
 }) {
   const pathname = usePathname();
-  const isPublicPage = pathname === "/welcome" || pathname === "/login";
+  const isPublicPage = pathname === "/welcome" || pathname === "/login" || pathname === "/about";
   const useSidebar = !isPublicPage && (user?.role === "ADMIN" || user?.role === "TEACHER");
   const publicLinks = [
     { href: "/welcome#loop", label: "训练流程" },
     { href: "/welcome#growth-title", label: "成长图谱" },
     { href: "/welcome#library", label: "内容库" },
     { href: "/welcome#tutors", label: "AI 导师" },
+    { href: "/about", label: "关于我们" },
   ];
 
   if (useSidebar && user) {
