@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { homeFor } from "@/lib/home";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function LoginPage() {
     const data = await res.json();
     setBusy(false);
     if (!res.ok) return setError(data.error ?? "登录失败");
-    router.push(data.role === "STUDENT" ? "/" : "/teacher");
+    router.push(homeFor(data.role));
     router.refresh();
   }
 
@@ -42,7 +43,7 @@ export default function LoginPage() {
           {busy ? "登录中…" : "登录"}
         </button>
       </form>
-      <p className="note">演示账号：学生 s2401 · 教师 teacher@deepread.local · 密码均为 deepread123</p>
+      <p className="note">演示账号：学生 student · 教师 teacher · 管理员 admin · 密码均为 Bamboo123</p>
     </div>
   );
 }

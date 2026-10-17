@@ -33,6 +33,14 @@ async function upsertResponse(r: ResponseInsert, tx: Tx | typeof db = db) {
     .onConflictDoUpdate({ target: [responses.sessionId, responses.kind], set: { ...set, createdAt: new Date() } });
 }
 
+/** 防沉迷：每日可开始的训练节数（按 UTC+8 自然日）。继续进行中的训练不受限制。 */
+export async function dailyStarts(studentId: string) {
+  const limit = Number(process.env.DAILY_SESSION_LIMIT ?? 2);
+  const dayStart = localTimeAfter(new Date(), 0, 0, 0);
+  const [{ n }] = await db.select({ n: count() }).from(sessions).where(and(eq(sessions.studentId, studentId), gte(sessions.startedAt, dayStart)));
+  return { started: n, limit, left: Math.max(0, limit - n) };
+}
+
 export async function startSession(user: SessionUser, passageId: string, assignmentId?: string) {
   const passage = await db.query.passages.findFirst({ where: and(eq(passages.id, passageId), eq(passages.status, "PUBLISHED")) });
   if (!passage) throw new TrainingError(404, "材料不存在或未发布");
@@ -44,11 +52,8 @@ export async function startSession(user: SessionUser, passageId: string, assignm
   });
   if (open) return open;
 
-  // 防沉迷：每日可开始的训练节数（按 UTC+8 自然日）
-  const limit = Number(process.env.DAILY_SESSION_LIMIT ?? 2);
-  const dayStart = localTimeAfter(new Date(), 0, 0, 0);
-  const [{ n }] = await db.select({ n: count() }).from(sessions).where(and(eq(sessions.studentId, user.id), gte(sessions.startedAt, dayStart)));
-  if (n >= limit) throw new TrainingError(429, `今天已开始 ${n} 节训练，明天再来吧。间隔练习比一次练很多更有效。`);
+  const { started, limit } = await dailyStarts(user.id);
+  if (started >= limit) throw new TrainingError(429, `今天已开始 ${started} 节训练，明天再来吧。间隔练习比一次练很多更有效。进行中的训练可以随时继续。`);
 
   if (assignmentId) {
     const a = await db.query.assignments.findFirst({ where: eq(assignments.id, assignmentId) });

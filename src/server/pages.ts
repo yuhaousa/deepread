@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { currentUser, type RoleKey } from "@/server/auth";
+import { homeFor } from "@/lib/home";
 
 export async function pageUser(...roles: RoleKey[]) {
   const user = await currentUser();
   if (!user) redirect("/login");
-  if (roles.length && !roles.includes(user.role)) redirect(user.role === "STUDENT" ? "/" : "/teacher");
+  if (roles.length && !roles.includes(user.role)) redirect(homeFor(user.role));
   return user;
 }
 

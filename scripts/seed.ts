@@ -1,5 +1,5 @@
 // 开发 / 演示种子数据。会清空现有数据，生产环境需显式设置 SEED_FORCE=1。
-// 演示账号：教师 teacher@deepread.local / deepread123；学生 s2401–s2408 / deepread123
+// 演示账号（密码均为 DEMO_PASSWORD）：管理员 admin；教师 teacher；学生 student（无历史记录）与 s2401–s2408
 
 import bcrypt from "bcryptjs";
 import { sql } from "drizzle-orm";
@@ -14,6 +14,7 @@ import { abilityScores } from "../src/server/learner/levels";
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool, { schema });
 const DAY = 24 * 3600_000;
+const DEMO_PASSWORD = "Bamboo123";
 
 // 确定性伪随机，保证每次种子数据一致
 let state = 20261017;
@@ -81,10 +82,10 @@ async function main() {
   }
   await db.execute(sql`TRUNCATE ai_calls, tutor_messages, responses, ability_attempts, review_items, sessions, assignments, mastery, classrooms, users, schools, exercises, key_points, content_cards, passages CASCADE`);
 
-  const pw = await bcrypt.hash("deepread123", 10);
+  const pw = await bcrypt.hash(DEMO_PASSWORD, 10);
   const [school] = await db.insert(schema.schools).values({ name: "深读示范学校", region: "intl" }).returning();
-  const [teacher] = await db.insert(schema.users).values({ username: "teacher@deepread.local", passwordHash: pw, displayName: "王老师", role: "TEACHER" }).returning();
-  await db.insert(schema.users).values({ username: "admin@deepread.local", passwordHash: pw, displayName: "平台管理员", role: "ADMIN" });
+  const [teacher] = await db.insert(schema.users).values({ username: "teacher", passwordHash: pw, displayName: "王老师", role: "TEACHER" }).returning();
+  await db.insert(schema.users).values({ username: "admin", passwordHash: pw, displayName: "平台管理员", role: "ADMIN" });
   const [classroom] = await db.insert(schema.classrooms).values({ name: "初二（3）班", grade: "初二", schoolId: school.id, teacherId: teacher.id }).returning();
 
   const names = ["林同学", "陈同学", "张同学", "李同学", "王同学", "赵同学", "周同学", "吴同学"];
@@ -104,6 +105,8 @@ async function main() {
     )
     .returning();
   students.sort((a, b) => a.username.localeCompare(b.username));
+  // 通用演示学生：已获监护人同意，没有历史记录，适合从头体验训练
+  await db.insert(schema.users).values({ username: "student", passwordHash: pw, displayName: "体验同学", role: "STUDENT", grade: "初二", classroomId: classroom.id, guardianConsentAt: new Date() });
 
   const passages = new Map<string, Awaited<ReturnType<typeof seedPassage>>>();
   for (const p of PASSAGES) passages.set(p.slug, await seedPassage(p));
@@ -204,7 +207,7 @@ async function main() {
   // 一条已到期的复习
   await db.insert(schema.reviewItems).values({ studentId: lin.id, keyPointId: passages.get("cafeteria-leftovers")!.keyPoints[1].id, dueAt: new Date(Date.now() - 3600_000), intervalD: 1 });
 
-  console.log(`种子数据完成：${PASSAGES.length} 篇材料，${students.length} 名学生，1 名教师，1 名管理员。`);
+  console.log(`种子数据完成：${PASSAGES.length} 篇材料，${students.length + 1} 名学生，1 名教师，1 名管理员。`);
 }
 
 main()
