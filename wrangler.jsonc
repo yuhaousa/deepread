@@ -21,7 +21,7 @@
     {
       "binding": "DB",
       "database_name": "deepread",
-      "database_id": "d5ca97ea-512a-4bb7-8f4e-a84059bca280",
+      "database_id": "25826cef-7981-41c6-b8cf-458975331103",
       "migrations_dir": "drizzle"
     }
   ],
