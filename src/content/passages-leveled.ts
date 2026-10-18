@@ -1,4 +1,4 @@
-// 分级扩充材料：补齐 L1 与 L5，并让每一级覆盖更多能力。
+// 分级扩充材料：补齐 L1、L5 与 L6，并让每一级覆盖更多能力。
 // 篇幅按 LEVEL_META 的字数区间编写；段落作用、核查题的答案顺序刻意打乱，避免按位置猜答案。
 // 正式发布前须走内容审核流（事实核查、年龄适配、题目有原文依据）。
 
@@ -7,7 +7,7 @@ import type { PassageSpec } from "@/lib/domain";
 const ORIGINAL = "平台编辑原创，可商用";
 const AUDIT_TYPES = ["准确", "夸大结论", "数字错误", "与原文矛盾", "原文没有（编造）"];
 
-export const LEVELED_PASSAGES: PassageSpec[] = [
+const CORE_LEVELED_PASSAGES: PassageSpec[] = [
   // ───────────────────────── L1 · 专注 ─────────────────────────
   {
     slug: "sunflower-sun",
@@ -711,4 +711,24 @@ export const LEVELED_PASSAGES: PassageSpec[] = [
     refSummary:
       "一项观察性研究跟踪了约 4 万名 40 至 70 岁成年人 10 年，发现每天喝 2 至 3 杯咖啡的人死亡风险低约 12%，6 杯以上没有差异；研究者强调这只说明相关、不能证明因果，且结论不适用于儿童和青少年。新闻报道准确转述并注明出处，营养学家认为还需随机对照试验确认；社交媒体帖子却把数字改成“寿命延长 12 年”，还说越多越好、学生也可多喝，并且没有出处。判断健康信息时，可以先看三点：有无出处、是相关还是导致、是否适用于自己。",
   },
+
+];
+
+// L6 使用高年级双文本与多源材料的进阶版本：增加方法评估、证据边界和更高阶迁移任务。
+export const LEVELED_PASSAGES: PassageSpec[] = [
+  ...CORE_LEVELED_PASSAGES,
+  ...CORE_LEVELED_PASSAGES.filter((p) => p.level === "L5").map((p) => ({
+    ...p,
+    slug: `${p.slug}-l6`,
+    title: `L6 进阶 · ${p.title}`,
+    grade: "高中拓展",
+    level: "L6" as const,
+    lead: `${p.lead} 本级挑战：不只复述结论，还要评估证据能支持到哪里。`,
+    paragraphs: [...p.paragraphs, "【L6 方法反思】综合多篇材料时，先标出每个来源的研究对象、方法和时间范围，再比较它们是否真正回答了同一个问题。若样本、测量方式或背景条件不同，数字看起来矛盾也未必代表其中一方错误。把直接观察、作者解释和读者推断分开，并说明证据局限与适用范围，才能形成可检验、不过度延伸的判断。"],
+    card: { ...p.card, goals: [...p.card.goals, "评价证据边界与适用范围"], prerequisites: "具备 L5 多源材料阅读经验" },
+    keyPoints: [...p.keyPoints, { text: "L6 要区分直接观察、作者解释和读者推断，并说明证据局限与适用范围", keywords: ["直接观察", "证据局限", "适用范围"], paragraph: p.paragraphs.length + 1 }],
+    predict: { ...p.predict, question: "读完材料后，哪种做法最能避免把证据说得过头？" },
+    transfer: "结合文中至少两个来源，写一段综合判断：说明共同结论、关键分歧、证据局限与适用范围，并提出还需要什么资料。",
+    refSummary: `${p.refSummary} 进阶阅读还要区分直接观察、作者解释和读者推断，说明证据局限与适用范围。`,
+  })),
 ];

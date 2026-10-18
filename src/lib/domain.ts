@@ -1,10 +1,10 @@
-// 领域常量与类型：六项能力、五级量表、训练步骤、题型规格。
+// 领域常量与类型：六项能力、六级量表、训练步骤、题型规格。
 // 与 src/db/schema.ts 中的枚举保持一致。
 
 export const ABILITIES = ["FOCUS", "RECALL", "COMPREHEND", "ANALYZE", "VERIFY", "EXPRESS"] as const;
 export type AbilityKey = (typeof ABILITIES)[number];
 
-export const LEVELS = ["L1", "L2", "L3", "L4", "L5"] as const;
+export const LEVELS = ["L1", "L2", "L3", "L4", "L5", "L6"] as const;
 export type LevelKey = (typeof LEVELS)[number];
 
 export const STEPS = ["PREDICT", "READ", "RECALL", "ANALYZE", "EXPRESS", "FEEDBACK"] as const;
@@ -34,9 +34,10 @@ export const LEVEL_META: Record<LevelKey, { name: string; stage: string; length:
   L3: { name: "发展", stage: "初二", length: "500–800 字", structure: "因果链、对比，含数据", inference: "跨段推理，有限定条件" },
   L4: { name: "熟练", stage: "初三", length: "700–900 字", structure: "议论文含让步与反驳，或双文本", inference: "识别隐含假设、比较立场" },
   L5: { name: "精通", stage: "高中", length: "900–1500 字 / 多源", structure: "学术短论、多篇材料", inference: "评价论证强度与来源可信度" },
+  L6: { name: "研究", stage: "高中拓展 / 大学入门", length: "1000–2500 字 / 多源", structure: "跨学科长文、研究摘要与数据", inference: "评价方法局限、证据边界与适用条件" },
 };
 
-/** 六项能力 × 五级行为描述（与方案文档第 7 节一致） */
+/** 六项能力 × 六级行为描述（与方案文档第 7 节一致） */
 export const LEVEL_DESCRIPTORS: Record<AbilityKey, Record<LevelKey, string>> = {
   FOCUS: {
     L1: "一次读完 400 字，不中途离开",
@@ -44,6 +45,7 @@ export const LEVEL_DESCRIPTORS: Record<AbilityKey, Record<LevelKey, string>> = {
     L3: "读完 800 字，回看不超过 2 次",
     L4: "带着问题读 900 字议论文，只标注相关句",
     L5: "规划多源材料的阅读顺序，分段完成",
+    L6: "规划多源阅读顺序，设定问题并按计划完成长文",
   },
   RECALL: {
     L1: "合书说出主旨",
@@ -51,6 +53,7 @@ export const LEVEL_DESCRIPTORS: Record<AbilityKey, Record<LevelKey, string>> = {
     L3: "主旨 + 2 个理由，覆盖 ≥ 60%，次日再提取 ≥ 50%",
     L4: "覆盖 ≥ 70%，7 天后再提取 ≥ 50%",
     L5: "多篇混合回忆，覆盖 ≥ 70%",
+    L6: "跨多篇材料重建共同结论与分歧，延时回忆覆盖 ≥ 80%",
   },
   COMPREHEND: {
     L1: "说出每段大意",
@@ -58,6 +61,7 @@ export const LEVEL_DESCRIPTORS: Record<AbilityKey, Record<LevelKey, string>> = {
     L3: "画出 3 环以上的因果链",
     L4: "说明限定词如何改变结论",
     L5: "整合多源信息形成自己的解释",
+    L6: "整合不同方法与背景下的证据，解释结果为何分歧",
   },
   ANALYZE: {
     L1: "区分事实与看法",
@@ -65,6 +69,7 @@ export const LEVEL_DESCRIPTORS: Record<AbilityKey, Record<LevelKey, string>> = {
     L3: "区分理由与证据，识别以偏概全",
     L4: "识别相关当因果、偷换概念，评价让步",
     L5: "评价论证强度，指出隐含假设",
+    L6: "评价研究设计、替代解释、推论边界与隐含假设",
   },
   VERIFY: {
     L1: "找出与原文矛盾的句子",
@@ -72,6 +77,7 @@ export const LEVEL_DESCRIPTORS: Record<AbilityKey, Record<LevelKey, string>> = {
     L3: "识别夸大结论与编造内容",
     L4: "核查 AI 摘要中的 5 类错误并给出原文依据",
     L5: "多源交叉核查，评价来源可信度",
+    L6: "追溯原始来源，核查样本、方法与数据并标明不确定性",
   },
   EXPRESS: {
     L1: "1–2 句说清主旨",
@@ -79,6 +85,7 @@ export const LEVEL_DESCRIPTORS: Record<AbilityKey, Record<LevelKey, string>> = {
     L3: "3–5 句摘要，量表 ≥ 4 / 6",
     L4: "量表 ≥ 5 / 6，迁移题能说明理由",
     L5: "写 200 字简报，含对反方的回应",
+    L6: "写有来源依据与局限说明的多源综合简报",
   },
 };
 

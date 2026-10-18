@@ -13,7 +13,7 @@ AI 时代的深度阅读与判断力训练平台。面向初中到高中学生�
 npm install
 cp .dev.vars.example .dev.vars  # 本地机密：AUTH_SECRET、模型 Key
 npm run db:migrate:local        # 在本地 D1 建表
-npm run db:seed:local           # 19 篇分级材料 + 演示学校/班级/账号（会清空数据）
+npm run db:seed:local           # 21 篇分级材料 + 演示学校/班级/账号（会清空数据）
 npm run dev                     # http://localhost:3000 （Next.js 开发服务器 + 本地 D1）
 npm run preview                 # 可选：按线上方式构建，在 workerd 中运行 http://localhost:8787
 ```
@@ -54,9 +54,9 @@ src/
     welcome/                 公开落地页（未登录访问首页时进入）
     admin/                   管理后台：总览、用户管理、学情表现与学生报告、班级
   content/passages.ts     种子材料（19 篇，含内容卡片、关键点、题目）
-  content/passages-leveled.ts  分级扩充材料（L1–L5，按量表字数编写）
+  content/passages-leveled.ts  分级扩充材料（L1–L6，按量表字数编写）
   db/schema.ts            数据模型（Drizzle ORM）
-  lib/domain.ts           六项能力、五级量表、题型定义
+  lib/domain.ts           六项能力、六级量表、题型定义
   server/
     assessment/           测评引擎：规则评分、关键点匹配、AI 量表
     tutor/                AI 导师：角色提示词、护栏检测、对话服务
@@ -161,3 +161,4 @@ npm run deploy                           # 构建并部署，输出 *.workers.de
 | L3 发展 | 城市为什么会“发烧”（理解）· 午睡能让记忆更好吗（核查）· 秋天的叶子为什么会变色（回忆）· 一条河为什么越来越弯（理解）· 我们学校的剩饭调查（核查）· 多吃鱼会让人变聪明吗（分析） |
 | L4 熟练 | 刷短视频会让人变笨吗（分析）· 考前熬夜复习，值得吗（分析）· 共享单车的“潮汐”（表达）· 莫高窟的“慢”保护（回忆）· 一份关于中学生近视的调查（核查） |
 | L5 精通 | 校园该不该全面禁止手机——两种观点（分析 · 双文本）· “喝咖啡能长寿”？三条信息的比较（核查 · 多源） |
+| L6 研究 | 双文本论证的进阶分析 · 多源健康信息的证据边界（沿用材料并增加进阶任务） |

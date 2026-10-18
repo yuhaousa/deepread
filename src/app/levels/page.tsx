@@ -14,13 +14,13 @@ export default async function Levels() {
   return (
     <>
       <div className="eyebrow">阅读能力等级量表</div>
-      <h2 style={{ fontSize: 24, marginTop: 6 }}>六项能力 × 五个等级</h2>
+      <h2 style={{ fontSize: 24, marginTop: 6 }}>六项能力 × 六个等级</h2>
       <p className="lede" style={{ marginTop: 6 }}>
-        每项能力单独定级，不合成总分，也不做排名。首期覆盖 L1–L4（初中段），L5 留给高中段。{user.role === "STUDENT" && "绿色格子是你当前的等级。"}
+        每项能力单独定级，不合成总分，也不做排名。L1–L6 从基础阅读逐步进阶到多源研究型阅读。{user.role === "STUDENT" && "绿色格子是你当前的等级。"}
       </p>
 
       <div className="sec">
-        <h2 style={{ fontSize: 19 }}>五级的文本难度</h2>
+        <h2 style={{ fontSize: 19 }}>六级的文本难度</h2>
         <div className="tablewrap">
           <table>
             <thead>

@@ -121,10 +121,10 @@ const SLIDES: Slide[] = [
     key: "levels",
     glyph: "阶",
     scene: "night",
-    eyebrow: "五级能力量表",
+    eyebrow: "六级能力量表",
     title: (
       <>
-        从 L1 到 L5，
+        从 L1 到 L6，
         <br />
         <em>一级一级</em>读上去。
       </>
@@ -140,6 +140,7 @@ const SLIDES: Slide[] = [
             ["L3", "发展", "初二"],
             ["L4", "熟练", "初三"],
             ["L5", "精通", "高中"],
+            ["L6", "研究", "大学入门"],
           ].map(([l, n, s], i) => (
             <li key={l} style={{ marginLeft: `${i * 9}%` }}>
               <b>{l}</b>

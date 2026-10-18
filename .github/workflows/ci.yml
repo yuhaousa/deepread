@@ -15,6 +15,7 @@ jobs:
       # 本地 D1（Miniflare）：验证迁移与种子 SQL 都能执行
       - run: npm run db:migrate:local
       - run: npm run db:seed:local
+      - run: npm run db:seed-levels:local
       # 构建 Cloudflare Workers 产物
       - run: npx opennextjs-cloudflare build
         env:
@@ -102,4 +103,6 @@ jobs:
       - name: Seed empty database
         if: steps.seed_check.outputs.empty == 'true'
         run: npm run db:seed:remote
+      - name: Add new level content without resetting student data
+        run: npm run db:seed-levels:remote
       - run: npm run deploy

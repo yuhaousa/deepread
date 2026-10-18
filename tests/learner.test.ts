@@ -20,8 +20,8 @@ describe("等级规则", () => {
   it("低于当前等级的材料不计入升级", () => {
     expect(decideLevel("L3", attempts([0.9, 0.9, 0.9, 0.9], "L2"), true).action).toBe("stay");
   });
-  it("L5 不再升级", () => {
-    expect(decideLevel("L5", attempts([1, 1, 1, 1], "L5"), true).action).toBe("stay");
+  it("L6 不再升级", () => {
+    expect(decideLevel("L6", attempts([1, 1, 1, 1], "L6"), true).action).toBe("stay");
   });
   it("本级连续 3 次 < 40% → 补练", () => {
     expect(decideLevel("L3", attempts([0.2, 0.3, 0.1], "L3"), null)).toEqual({ action: "remedial" });

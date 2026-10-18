@@ -15,7 +15,9 @@
     "db:migrate:local": "wrangler d1 migrations apply deepread --local",
     "db:migrate:remote": "wrangler d1 migrations apply deepread --remote",
     "db:seed:local": "tsx scripts/seed.ts && wrangler d1 execute deepread --local --file=.wrangler/seed.sql",
-    "db:seed:remote": "tsx scripts/seed.ts && wrangler d1 execute deepread --remote --file=.wrangler/seed.sql"
+    "db:seed:remote": "tsx scripts/seed.ts && wrangler d1 execute deepread --remote --file=.wrangler/seed.sql",
+    "db:seed-levels:local": "tsx scripts/seed-level6.ts && wrangler d1 execute deepread --local --file=.wrangler/level6-seed.sql",
+    "db:seed-levels:remote": "tsx scripts/seed-level6.ts && wrangler d1 execute deepread --remote --file=.wrangler/level6-seed.sql"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.12",

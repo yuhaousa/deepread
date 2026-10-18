@@ -17,7 +17,7 @@ const bool = (name: string) => integer(name, { mode: "boolean" });
 
 export const roleEnum = ["STUDENT", "TEACHER", "PARENT", "ADMIN", "EDITOR"] as const;
 export const abilityEnum = ["FOCUS", "RECALL", "COMPREHEND", "ANALYZE", "VERIFY", "EXPRESS"] as const;
-export const levelEnum = ["L1", "L2", "L3", "L4", "L5"] as const;
+export const levelEnum = ["L1", "L2", "L3", "L4", "L5", "L6"] as const;
 export const passageStatusEnum = ["DRAFT", "IN_REVIEW", "PUBLISHED", "ARCHIVED"] as const;
 export const exerciseTypeEnum = ["PREDICT", "ROLES", "AUDIT", "QUIZ", "SEQUENCE", "SUMMARY", "TRANSFER"] as const;
 export const stepEnum = ["PREDICT", "READ", "RECALL", "ANALYZE", "EXPRESS", "FEEDBACK", "DONE"] as const;

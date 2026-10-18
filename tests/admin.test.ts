@@ -109,7 +109,7 @@ it("levelDistribution 为每项能力补齐五个等级", () => {
   ]);
   expect(d).toHaveLength(6);
   const recall = d.find((x) => x.ability === "RECALL")!;
-  expect(recall.counts).toEqual({ L1: 0, L2: 5, L3: 2, L4: 0, L5: 0 });
+  expect(recall.counts).toEqual({ L1: 0, L2: 5, L3: 2, L4: 0, L5: 0, L6: 0 });
   expect(recall.total).toBe(7);
   expect(d.find((x) => x.ability === "FOCUS")!.total).toBe(0);
 });

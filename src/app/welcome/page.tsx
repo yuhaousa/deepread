@@ -43,7 +43,7 @@ export default function Welcome() {
         </div>
         <div>
           <b>{LEVELS.length}</b>
-          <span>级能力量表 L1–L5</span>
+          <span>级能力量表 L1–L6</span>
         </div>
         <div>
           <b>{ABILITIES.length}</b>
@@ -118,7 +118,7 @@ export default function Welcome() {
 
       <section className="sec" id="library">
         <div className="eyebrow">分级内容库</div>
-        <h2>从小学高年级到高中，五级材料逐步加难</h2>
+        <h2>从小学高年级到大学入门，六级材料逐步加深</h2>
         <p className="lede">每篇材料都有内容卡片、关键点和有原文依据的题目，按篇幅、结构和推理难度分级。</p>
         <div className="levels-grid">
           {byLevel.map(({ level, items }) => (

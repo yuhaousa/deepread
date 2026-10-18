@@ -38,7 +38,7 @@ export async function studentReport(studentId: string, now = new Date()) {
       level,
       levelName: LEVEL_META[level].name,
       descriptor: LEVEL_DESCRIPTORS[a][level],
-      nextDescriptor: level === "L5" ? null : LEVEL_DESCRIPTORS[a][`L${Number(level[1]) + 1}` as LevelKey],
+      nextDescriptor: level === "L6" ? null : LEVEL_DESCRIPTORS[a][`L${Number(level[1]) + 1}` as LevelKey],
       weeks,
     };
   });
