@@ -129,6 +129,7 @@ export const sessions = sqliteTable(
     passageVersion: integer("passage_version").notNull(),
     assignmentId: text("assignment_id").references(() => assignments.id),
     step: text("step", { enum: stepEnum }).notNull().default("PREDICT"),
+    mode: text("mode", { enum: tutorRoleEnum }), // 学习方式（四种导师角色之一）；为空时按材料默认导师
     question: text("question"), // 学生读前提出的问题
     highlights: json<string[]>("highlights").notNull().$defaultFn(() => []), // "段-句" 标记
     readingSeconds: integer("reading_seconds"),

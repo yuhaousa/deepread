@@ -10,6 +10,10 @@ import { matchKeyPoints, scoreAnalysis, scorePredict, type AnalysisAnswer, type 
 import { aiRecall, aiRubric, LOW_CONFIDENCE, type RubricResult } from "@/server/assessment/ai";
 import { abilityScores, decideLevel, todayTip } from "@/server/learner/levels";
 import { localTimeAfter, planReviews } from "@/server/learner/schedule";
+import { isLearningMode, type LearningMode } from "@/lib/modes";
+
+/** 本次训练的学习方式；旧数据没有记录时用材料默认导师 */
+export const sessionMode = (mode: string | null | undefined, fallback: LearningMode): LearningMode => (isLearningMode(mode) ? mode : fallback);
 
 const { sessions, responses, passages, assignments, users, keyPoints, abilityAttempts, mastery, reviewItems } = schema;
 
@@ -48,7 +52,7 @@ export async function dailyStarts(studentId: string) {
   return { started: n, limit, left: Math.max(0, limit - n) };
 }
 
-export async function startSession(user: SessionUser, passageId: string, assignmentId?: string) {
+export async function startSession(user: SessionUser, passageId: string, assignmentId?: string, mode?: LearningMode) {
   const passage = await db.query.passages.findFirst({ where: and(eq(passages.id, passageId), eq(passages.status, "PUBLISHED")) });
   if (!passage) throw new TrainingError(404, "材料不存在或未发布");
 
@@ -67,7 +71,11 @@ export async function startSession(user: SessionUser, passageId: string, assignm
     const me = await db.query.users.findFirst({ where: eq(users.id, user.id), columns: { classroomId: true } });
     if (!a || a.passageId !== passageId || a.classroomId !== me?.classroomId) throw new TrainingError(400, "任务与材料不匹配");
   }
-  const [created] = await db.insert(sessions).values({ studentId: user.id, passageId, passageVersion: passage.version, assignmentId }).returning();
+  // 未选择学习方式时，用材料默认的导师角色
+  const [created] = await db
+    .insert(sessions)
+    .values({ studentId: user.id, passageId, passageVersion: passage.version, assignmentId, mode: mode ?? passage.tutorRole })
+    .returning();
   return created;
 }
 
@@ -80,6 +88,7 @@ export async function getOwnedSession(user: SessionUser, id: string) {
 }
 
 export interface ProgressPatch {
+  mode?: LearningMode;
   step?: StepKey;
   question?: string;
   highlights?: string[];
@@ -98,6 +107,7 @@ export async function updateProgress(user: SessionUser, id: string, patch: Progr
   }
   const set: Partial<typeof sessions.$inferInsert> = {};
   if (patch.step) set.step = patch.step;
+  if (patch.mode) set.mode = patch.mode;
   if (patch.question !== undefined) set.question = patch.question;
   if (patch.highlights) set.highlights = patch.highlights;
   if (patch.readingSeconds !== undefined) set.readingSeconds = patch.readingSeconds;
@@ -166,13 +176,15 @@ const publicRubric = (r: RubricResult) => ({
   nextStep: r.next_step,
 });
 
-export async function submitSummary(user: SessionUser, id: string, summary: string, transfer: string | null) {
-  const { passage } = await getOwnedSession(user, id);
-  const rubric = await aiRubric(passage, summary, transfer, userHash(user.id));
+/** extra：论证对练的反方回应，或核查陪练的原文依据 */
+export async function submitSummary(user: SessionUser, id: string, summary: string, transfer: string | null, extra: string | null = null) {
+  const { session, passage } = await getOwnedSession(user, id);
+  const mode = sessionMode(session.mode, passage.tutorRole);
+  const rubric = await aiRubric(passage, summary, transfer, userHash(user.id), extra ? { mode, text: extra } : undefined);
   await upsertResponse({
     sessionId: id,
     kind: "summary",
-    answer: { summary, transfer },
+    answer: { summary, transfer, ...(extra ? { extra, mode } : {}) },
     score: rubric ? rubric.total / 6 : null,
     detail: rubric,
     source: rubric ? "AI" : "RULE",
@@ -208,7 +220,7 @@ export async function completeSession(user: SessionUser, id: string) {
   const tip = todayTip(scores);
   const now = new Date();
   const kps = await db.query.keyPoints.findMany({ where: eq(keyPoints.passageId, passage.id), orderBy: asc(keyPoints.order) });
-  const plan = planReviews(kps.length, covered, now);
+  const plan = planReviews(kps.length, covered, now, { intensive: sessionMode(session.mode, passage.tutorRole) === "RECALL_COACH" });
 
   // 先读：当前等级、各能力最近的作答、最近一次 7 天复习。D1 不支持在事务里边读边写，所以判定在内存中完成。
   const abilities = Object.entries(scores) as [AbilityKey, number][];

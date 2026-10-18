@@ -5,7 +5,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { STEP_LABEL, STEPS, TUTOR_ROLE_LABEL, type StepKey } from "@/lib/domain";
+import { STEP_LABEL, STEPS, type StepKey } from "@/lib/domain";
+import { LEARNING_MODES, MODE_SPECS, type LearningMode } from "@/lib/modes";
 import type { ClientPassage } from "@/server/content";
 import type { AnalysisResult } from "@/server/assessment/rules";
 
@@ -41,7 +42,21 @@ const splitSentences = (p: string) => p.split(/(?<=[。！？])/).filter(Boolean
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Singapore" }) : "—");
 
-export function Trainer({ sessionId, passage, initialStep, initialQuestion, initialHighlights }: { sessionId: string; passage: ClientPassage; initialStep: StepKey | "DONE"; initialQuestion: string | null; initialHighlights: string[] }) {
+export function Trainer({
+  sessionId,
+  passage,
+  initialStep,
+  initialQuestion,
+  initialHighlights,
+  initialMode,
+}: {
+  sessionId: string;
+  passage: ClientPassage;
+  initialStep: StepKey | "DONE";
+  initialQuestion: string | null;
+  initialHighlights: string[];
+  initialMode: LearningMode;
+}) {
   const startIndex = initialStep === "DONE" ? 5 : STEPS.indexOf(initialStep);
   const [step, setStep] = useState(Math.max(0, startIndex));
   const [question, setQuestion] = useState(initialQuestion ?? "");
@@ -60,6 +75,9 @@ export function Trainer({ sessionId, passage, initialStep, initialQuestion, init
   const [summary, setSummary] = useState("");
   const [transfer, setTransfer] = useState("");
   const [sumRes, setSumRes] = useState<SummaryResult | null>(null);
+  const [mode, setMode] = useState<LearningMode>(initialMode);
+  const [extra, setExtra] = useState("");
+  const spec = MODE_SPECS[mode];
   const [done, setDone] = useState<Complete | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -92,10 +110,20 @@ export function Trainer({ sessionId, passage, initialStep, initialQuestion, init
     })();
   }, [stepKey, done, sessionId]);
 
+  async function changeMode(next: LearningMode) {
+    setMode(next);
+    await api(`/api/sessions/${sessionId}`, "PATCH", { mode: next });
+  }
+
   const head = (title: string, why: string) => (
     <>
       <h3>{title}</h3>
       <p className="why">{why}</p>
+      {spec.tips[stepKey] && (
+        <p className="mode-tip">
+          <b>{spec.label}</b>　{spec.tips[stepKey]}
+        </p>
+      )}
     </>
   );
 
@@ -493,6 +521,13 @@ export function Trainer({ sessionId, passage, initialStep, initialQuestion, init
             <textarea style={{ minHeight: 90 }} value={transfer} onChange={(e) => setTransfer(e.target.value)} placeholder="用文中的道理来回答…" maxLength={1500} />
           </div>
         )}
+        {spec.extraTask && (
+          <div className="field mode-task">
+            <span>{spec.extraTask.label}</span>
+            <small>{spec.extraTask.hint}</small>
+            <textarea style={{ minHeight: 90 }} value={extra} onChange={(e) => setExtra(e.target.value)} placeholder={spec.extraTask.placeholder} maxLength={1500} />
+          </div>
+        )}
         {busy && <div className="fb ai"><p className="thinking">AI 导师正在按量表阅读你的摘要</p></div>}
         {sumRes && (
           <>
@@ -526,7 +561,7 @@ export function Trainer({ sessionId, passage, initialStep, initialQuestion, init
               if (summary.trim().length < 20) return setError("摘要还太短，至少写两三句。");
               setBusy(true);
               setError("");
-              const res = await api<SummaryResult>(`/api/sessions/${sessionId}/summary`, "POST", { summary, transfer: passage.transfer ? transfer : null });
+              const res = await api<SummaryResult>(`/api/sessions/${sessionId}/summary`, "POST", { summary, transfer: passage.transfer ? transfer : null, extra: spec.extraTask ? extra : null });
               setBusy(false);
               if (res.ok) setSumRes(res.data);
               else setError(res.error);
@@ -599,12 +634,27 @@ export function Trainer({ sessionId, passage, initialStep, initialQuestion, init
         {passage.genre} · {passage.grade} · {passage.level}
       </div>
       <h2 style={{ fontSize: 24, marginTop: 6, fontFamily: "var(--f-read)" }}>{passage.title}</h2>
+      <div className="mode-bar">
+        <span className="tag g">学习方式</span>
+        <label className="mode-select">
+          <span className="sr-only">切换学习方式</span>
+          <select className="in compact" value={mode} onChange={(e) => changeMode(e.target.value as LearningMode)}>
+            {LEARNING_MODES.map((m) => (
+              <option key={m} value={m}>
+                {MODE_SPECS[m].label} · {MODE_SPECS[m].tagline}
+              </option>
+            ))}
+          </select>
+        </label>
+        <span className="note">重点：{spec.focus.map((s) => STEP_LABEL[s]).join("、")}</span>
+      </div>
       <div className="desk">
         <ol className="steps">
           {STEPS.map((s, i) => (
-            <li key={s} className={i === step ? "on" : i < step ? "done" : ""}>
+            <li key={s} className={`${i === step ? "on" : i < step ? "done" : ""}${spec.focus.includes(s) ? " focus" : ""}`}>
               <i>{i < step ? "✓" : i + 1}</i>
               <span>{STEP_LABEL[s]}</span>
+              {spec.focus.includes(s) && <em className="focus-mark" aria-label="本方式重点">重点</em>}
             </li>
           ))}
         </ol>
@@ -614,25 +664,18 @@ export function Trainer({ sessionId, passage, initialStep, initialQuestion, init
           {error && <p className="err-msg" style={{ marginTop: 10 }}>{error}</p>}
         </div>
       </div>
-      {stepKey !== "FEEDBACK" && <Tutor sessionId={sessionId} roleLabel={TUTOR_ROLE_LABEL[passage.tutorRole]} step={stepKey} />}
+      {stepKey !== "FEEDBACK" && <Tutor key={mode} sessionId={sessionId} mode={mode} step={stepKey} />}
     </>
   );
 }
 
-function Tutor({ sessionId, roleLabel, step }: { sessionId: string; roleLabel: string; step: StepKey }) {
+function Tutor({ sessionId, mode, step }: { sessionId: string; mode: LearningMode; step: StepKey }) {
+  const spec = MODE_SPECS[mode];
   const [open, setOpen] = useState(false);
-  const [msgs, setMsgs] = useState<{ role: "u" | "a"; text: string }[]>([{ role: "a", text: "我是你的阅读导师。卡住的时候问我，我会给你线索，但不会直接告诉你答案。" }]);
+  const [msgs, setMsgs] = useState<{ role: "u" | "a"; text: string }[]>([{ role: "a", text: spec.greeting }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
-  const CHIPS: Record<StepKey, string[]> = {
-    PREDICT: ["这类文章一般怎么展开？"],
-    READ: ["这个词是什么意思？", "这一段在讲什么？"],
-    RECALL: ["我想不起来了，给点线索", "回忆要写到什么程度？"],
-    ANALYZE: ["怎么判断段落的作用？", "这个推理哪里有问题？"],
-    EXPRESS: ["摘要怎么做取舍？", "迁移题从哪里入手？"],
-    FEEDBACK: [],
-  };
   useEffect(() => {
     chatRef.current?.scrollTo({ top: 1e6 });
   }, [msgs]);
@@ -651,12 +694,12 @@ function Tutor({ sessionId, roleLabel, step }: { sessionId: string; roleLabel: s
   return (
     <>
       <button className="btn green tutor-btn" onClick={() => setOpen(!open)}>
-        问 AI 导师
+        问{spec.label}
       </button>
       {open && (
         <div className="drawer" role="dialog" aria-label="AI 阅读导师">
           <header>
-            <b>{roleLabel}</b>
+            <b>{spec.label}</b>
             <small>第 {STEPS.indexOf(step) + 1} 步 {STEP_LABEL[step]} · 给提示，不给答案 · 内容由 AI 生成</small>
           </header>
           <div>
@@ -667,7 +710,7 @@ function Tutor({ sessionId, roleLabel, step }: { sessionId: string; roleLabel: s
               {busy && <div className="msg a thinking">想一想</div>}
             </div>
             <div className="chips">
-              {CHIPS[step].map((c) => (
+              {spec.chips[step].map((c) => (
                 <button key={c} type="button" onClick={() => ask(c)}>{c}</button>
               ))}
             </div>

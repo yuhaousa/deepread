@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { StepKey } from "@/lib/domain";
 import { toClient } from "@/server/content";
 import { pageUser } from "@/server/pages";
-import { getOwnedSession, TrainingError } from "@/server/training";
+import { getOwnedSession, sessionMode, TrainingError } from "@/server/training";
 import { Trainer } from "./trainer";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +27,7 @@ export default async function TrainPage({ params }: { params: Promise<{ id: stri
       initialStep={session.step as StepKey | "DONE"}
       initialQuestion={session.question}
       initialHighlights={session.highlights}
+      initialMode={sessionMode(session.mode, passage.tutorRole)}
     />
   );
 }

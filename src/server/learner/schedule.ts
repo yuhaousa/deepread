@@ -3,6 +3,8 @@
 
 export const REVIEW_INTERVALS = [1, 7] as const;
 export const NEXT_DAY_ITEMS = 3;
+/** 回忆教练方式：次日再提取更多关键点 */
+export const INTENSIVE_NEXT_DAY_ITEMS = 5;
 const UTC_OFFSET_H = 8;
 
 /** 从 from 起第 days 天的当地 hh:mm（UTC+8），返回 UTC 时间 */
@@ -22,12 +24,14 @@ export interface PlannedReview {
  * 次日：优先没回忆出来的关键点，再补已覆盖的，共 NEXT_DAY_ITEMS 个；
  * 7 天后：全部关键点混合再提取（与本周其他文章一起出现）。
  */
-export function planReviews(totalKeyPoints: number, covered: number[], now: Date): PlannedReview[] {
+export function planReviews(totalKeyPoints: number, covered: number[], now: Date, opts: { intensive?: boolean } = {}): PlannedReview[] {
   const all = Array.from({ length: totalKeyPoints }, (_, i) => i);
   const missed = all.filter((i) => !covered.includes(i));
-  const nextDay = [...missed, ...covered].slice(0, NEXT_DAY_ITEMS);
+  const nextDay = [...missed, ...covered].slice(0, opts.intensive ? INTENSIVE_NEXT_DAY_ITEMS : NEXT_DAY_ITEMS);
   return [
     ...nextDay.map((i) => ({ keyPointIndex: i, intervalD: 1, dueAt: localTimeAfter(now, 1) })),
+    // 回忆教练方式：第 3 天专门再提取遗漏的关键点
+    ...(opts.intensive ? missed.map((i) => ({ keyPointIndex: i, intervalD: 3, dueAt: localTimeAfter(now, 3) })) : []),
     ...all.map((i) => ({ keyPointIndex: i, intervalD: 7, dueAt: localTimeAfter(now, 7) })),
   ];
 }

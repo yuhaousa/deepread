@@ -3,7 +3,8 @@ import { STEPS } from "@/lib/domain";
 import { toClient } from "@/server/content";
 import { isResponse, ok, parseBody, requireUser } from "@/server/http";
 import { handle } from "@/server/route";
-import { getOwnedSession, updateProgress } from "@/server/training";
+import { getOwnedSession, sessionMode, updateProgress } from "@/server/training";
+import { LEARNING_MODES } from "@/lib/modes";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -14,7 +15,7 @@ export const GET = handle(async (_req: Request, { params }: Ctx) => {
   const { session, passage } = await getOwnedSession(user, id);
   const chars = passage.paragraphs.join("").replace(/\s/g, "").length + passage.lead.length;
   return ok({
-    session: { id: session.id, step: session.step, question: session.question, highlights: session.highlights, completedAt: session.completedAt },
+    session: { id: session.id, step: session.step, mode: sessionMode(session.mode, passage.tutorRole), question: session.question, highlights: session.highlights, completedAt: session.completedAt },
     passage: toClient(passage, chars, session.id),
   });
 });
@@ -26,6 +27,7 @@ const Patch = z.object({
   readingSeconds: z.number().int().min(0).max(4 * 3600).optional(),
   lookback: z.boolean().optional(),
   predictChoice: z.number().int().min(0).max(10).optional(),
+  mode: z.enum(LEARNING_MODES).optional(),
 });
 
 export const PATCH = handle(async (req: Request, { params }: Ctx) => {

@@ -2,9 +2,23 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { LearningMode } from "@/lib/modes";
 
 /** 开始（或继续）一次训练 */
-export function StartButton({ passageId, assignmentId, label = "开始训练", ghost = false }: { passageId: string; assignmentId?: string; label?: string; ghost?: boolean }) {
+export function StartButton({
+  passageId,
+  assignmentId,
+  mode,
+  label = "开始训练",
+  ghost = false,
+}: {
+  passageId: string;
+  assignmentId?: string;
+  /** 学习方式；不传时用材料默认导师 */
+  mode?: LearningMode;
+  label?: string;
+  ghost?: boolean;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -17,7 +31,7 @@ export function StartButton({ passageId, assignmentId, label = "开始训练", g
         onClick={async () => {
           setBusy(true);
           setError("");
-          const res = await fetch("/api/sessions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ passageId, assignmentId }) });
+          const res = await fetch("/api/sessions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ passageId, assignmentId, mode }) });
           const data = await res.json();
           if (!res.ok) {
             setBusy(false);

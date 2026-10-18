@@ -5,7 +5,7 @@ import { db, schema } from "@/lib/db";
 import { userHash } from "@/server/auth";
 import { fail, isResponse, ok, parseBody, requireUser } from "@/server/http";
 import { handle } from "@/server/route";
-import { getOwnedSession } from "@/server/training";
+import { getOwnedSession, sessionMode } from "@/server/training";
 import { tutorReply } from "@/server/tutor/service";
 
 const Body = z.object({ sessionId: z.string().min(1), message: z.string().trim().min(1).max(300) });
@@ -36,6 +36,7 @@ export const POST = handle(async (req: Request) => {
     step,
     [...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })), { role: "user", content: body.message }],
     userHash(user.id),
+    sessionMode(session.mode, passage.tutorRole),
   );
 
   await db.insert(schema.tutorMessages).values(

@@ -594,3 +594,20 @@ body:has(.hero-slider){overflow-x:clip}
   .site-footer{gap:12px}
   .site-footer nav{gap:16px}
 }
+/* ---------- 学习方式 ---------- */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.mode-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.mode-bar select.in.compact{padding:5px 10px;max-width:100%}
+.mode-tip{font-size:13.5px;margin:-6px 0 14px;padding:8px 12px;border-radius:8px;background:var(--navy-soft);color:var(--ink-2)}
+.mode-tip b{color:var(--ink);font-weight:500}
+.steps li .focus-mark{font-style:normal;font-size:11px;margin-left:auto;padding:0 6px;border-radius:99px;background:var(--bamboo-soft);color:var(--bamboo)}
+.mode-task{padding:12px 14px;border:1px dashed var(--bamboo);border-radius:8px;background:var(--bamboo-soft)}
+.start-card{flex-wrap:wrap}
+.start-modes{flex:1 1 100%;display:grid;gap:10px;margin-top:4px}
+.mode-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.mode-card{position:relative;display:grid;gap:4px;align-content:start;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;font-size:13.5px;color:var(--ink-2)}
+.mode-card input{position:absolute;opacity:0;pointer-events:none}
+.mode-card b{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:15px}
+.mode-card small{color:var(--bamboo);font-size:12.5px}
+.mode-card.on{border-color:var(--bamboo);box-shadow:0 0 0 1px var(--bamboo)}
+.mode-card:has(input:focus-visible){outline:2px solid var(--gold);outline-offset:2px}

@@ -5,6 +5,9 @@ import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import type { AbilityKey, LevelKey } from "@/lib/domain";
 import { db, schema } from "@/lib/db";
 import { buildLearnerRows, type LearnerRow } from "@/server/admin/metrics";
+import { isLearningMode, type LearningMode } from "@/lib/modes";
+
+const sessionMode = (mode: string | null, fallback: string): LearningMode => (isLearningMode(mode) ? mode : (fallback as LearningMode));
 
 const { users, classrooms, sessions, mastery, reviewItems } = schema;
 
@@ -74,8 +77,8 @@ export async function learnerPerformance(opts: { classroomId?: string; q?: strin
 export async function learnerSessions(studentId: string, limit = 20) {
   const rows = await db.query.sessions.findMany({
     where: eq(sessions.studentId, studentId),
-    columns: { id: true, step: true, startedAt: true, completedAt: true, readingSeconds: true, lookbacks: true },
-    with: { passage: { columns: { title: true, level: true, genre: true } }, responses: { columns: { kind: true, score: true, flagged: true } } },
+    columns: { id: true, step: true, mode: true, startedAt: true, completedAt: true, readingSeconds: true, lookbacks: true },
+    with: { passage: { columns: { title: true, level: true, genre: true, tutorRole: true } }, responses: { columns: { kind: true, score: true, flagged: true } } },
     orderBy: desc(sessions.startedAt),
     limit,
   });
@@ -86,6 +89,7 @@ export async function learnerSessions(studentId: string, limit = 20) {
     level: s.passage.level,
     genre: s.passage.genre,
     step: s.step,
+    mode: sessionMode(s.mode, s.passage.tutorRole),
     startedAt: s.startedAt,
     completedAt: s.completedAt,
     readingSeconds: s.readingSeconds,

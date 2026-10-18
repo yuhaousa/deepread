@@ -1,6 +1,7 @@
 // 学情表格与训练记录：管理后台与教师端共用。
 import Link from "next/link";
 import { ABILITIES, ABILITY_META, STEP_LABEL, type StepKey } from "@/lib/domain";
+import { MODE_SPECS } from "@/lib/modes";
 import { pct, type LearnerRow, type LearnerSortKey } from "@/server/admin/metrics";
 import type { learnerSessions } from "@/server/learner/performance";
 
@@ -92,12 +93,13 @@ export function SessionHistory({ history }: { history: Awaited<ReturnType<typeof
     <div className="tablewrap">
       <table className="admin-table num">
         <thead>
-          <tr><th>材料</th><th>开始</th><th>状态</th><th>阅读用时</th><th>回看</th><th>回忆覆盖</th><th>结构分析</th><th>摘要量表</th></tr>
+          <tr><th>材料</th><th>学习方式</th><th>开始</th><th>状态</th><th>阅读用时</th><th>回看</th><th>回忆覆盖</th><th>结构分析</th><th>摘要量表</th></tr>
         </thead>
         <tbody>
           {history.map((s) => (
             <tr key={s.id}>
               <td><span className="lvl">{s.level}</span> {s.title}</td>
+              <td>{MODE_SPECS[s.mode].label}</td>
               <td>{when(s.startedAt)}</td>
               <td>{s.completedAt ? "已完成" : `进行中 · ${STEP_LABEL[s.step as StepKey] ?? s.step}`}{s.flagged && <span className="tag o" style={{ marginLeft: 6 }}>待抽检</span>}</td>
               <td>{mmss(s.readingSeconds)}</td>

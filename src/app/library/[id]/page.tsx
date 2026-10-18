@@ -8,7 +8,7 @@ import { db, schema } from "@/lib/db";
 import { loadPassage } from "@/server/content";
 import { pageUser } from "@/server/pages";
 import { dailyStarts } from "@/server/training";
-import { StartButton } from "../../start-button";
+import { ModePicker } from "./mode-picker";
 
 export const dynamic = "force-dynamic";
 
@@ -107,13 +107,15 @@ export default async function PassagePage({ params }: { params: Promise<{ id: st
             </p>
           </div>
           <div className="start-actions">
-            {open ? (
-              <Link className="btn green" href={`/train/${open.id}`}>继续训练</Link>
-            ) : (
-              <StartButton passageId={p.id} label={lastDone ? "再练一次" : "开始训练"} />
-            )}
+            {open && <Link className="btn green" href={`/train/${open.id}`}>继续训练</Link>}
             {lastDone && <Link className="btn ghost" href={`/train/${lastDone.id}`}>查看上次反馈</Link>}
           </div>
+          {!open && (
+            <div className="start-modes">
+              <p className="note">选一种学习方式：AI 导师会按这种方式陪你练，重点步骤和附加任务也会不同。训练中可以随时切换。</p>
+              <ModePicker passageId={p.id} recommended={p.tutorRole} label={lastDone ? "再练一次" : "开始训练"} />
+            </div>
+          )}
         </div>
       )}
 

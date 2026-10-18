@@ -3,6 +3,7 @@
 
 import { z } from "zod";
 import type { PassageSpec } from "@/lib/domain";
+import type { LearningMode } from "@/lib/modes";
 import { callLlm } from "@/server/llm/router";
 import { recallPrompt, rubricPrompt } from "@/server/tutor/prompts";
 import { checkTutorOutput } from "@/server/tutor/guardrail";
@@ -44,8 +45,8 @@ export async function aiRecall(p: PassageSpec, recall: string, userHash?: string
   return { ...parsed.data, covered, feedback, model: res.model };
 }
 
-export async function aiRubric(p: PassageSpec, summary: string, transfer: string | null, userHash?: string): Promise<RubricResult | null> {
-  const res = await callLlm({ purpose: "RUBRIC", tier: "deep", json: true, userHash, messages: [{ role: "user", content: rubricPrompt(p, summary, transfer) }] });
+export async function aiRubric(p: PassageSpec, summary: string, transfer: string | null, userHash?: string, extra?: { mode: LearningMode; text: string }): Promise<RubricResult | null> {
+  const res = await callLlm({ purpose: "RUBRIC", tier: "deep", json: true, userHash, messages: [{ role: "user", content: rubricPrompt(p, summary, transfer, extra) }] });
   if (!res) return null;
   const parsed = Rubric.safeParse(extractJson(res.text));
   if (!parsed.success) return null;
